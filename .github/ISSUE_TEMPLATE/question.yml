@@ -1,0 +1,24 @@
+---
+name: Question
+about: Ask a question about usage or implementation
+title: '[QUESTION] '
+labels: ['question']
+assignees: ''
+---
+
+## Question
+A clear and concise question.
+
+## Context
+Describe what you're trying to achieve.
+
+## What you've tried
+Code snippets, docs you've read, approaches you've tested.
+
+## Environment
+- Node.js version:
+- Package version:
+- OpenClaw version (if applicable):
+
+## Additional Information
+Any other context that might help.

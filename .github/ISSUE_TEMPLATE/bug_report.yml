@@ -1,0 +1,38 @@
+---
+name: Bug Report
+about: Report a bug in vietnamese-language-support
+title: '[BUG] '
+labels: ['bug']
+assignees: ''
+---
+
+## Bug Description
+A clear and concise description of what the bug is.
+
+## Steps to Reproduce
+1. Call `fixText('...')` with input `...`
+2. Observe output
+3. Expected: `...`
+4. Actual: `...`
+
+## Environment
+- Node.js version:
+- Package version:
+- OS:
+- OpenClaw version (if applicable):
+
+## Test Case
+```javascript
+// Minimal code to reproduce
+import { fixText } from 'vietnamese-language-support';
+console.log(fixText('...'));
+```
+
+## Additional Context
+- Screenshots/logs if applicable
+- Related issues/PRs
+
+## Checklist
+- [ ] I have searched existing issues
+- [ ] I have tested with latest version
+- [ ] I have provided minimal reproduction
