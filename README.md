@@ -34,7 +34,7 @@ A production-ready **Vietnamese language processing skill** for OpenClaw that tr
 
 ### Native Fluency & Intelligence (P2)
 - **3-gram Fluency Model**: 3,007 n-grams, 765 vocab, add-k smoothing (k=0.1)
-- **Context-Aware Alternatives**: 4 dimensions — relationship (peer/older/younger/formal), domain (tech/game/finance/lao), formality (auto/formal/casual), regional (north/central/south)
+- **Context-Aware Alternatives**: 4 dimensions - relationship (peer/older/younger/formal), domain (tech/game/finance/lao), formality (auto/formal/casual), regional (north/central/south)
 - **Idiom/Proverb Injection**: 482 entries with keyword+category+context scoring, top-5 relevance ranking
 - **Regional Auto-Detection**: Northern/Central/Southern dialect detection with confidence scoring
 - **Sentence Rewriter**: 4 transformation patterns (passive→active, wordy→concise, double-negative, topic-comment)
@@ -56,9 +56,9 @@ A production-ready **Vietnamese language processing skill** for OpenClaw that tr
 
 ```bash
 # As OpenClaw skill (recommended)
-openclaw skill install github:openclaw/vietnamese-language-support
+openclaw skill install github:hackerpro108/Vietnamese-Language-Support-Skill
 
-# Or as npm package
+# Or as npm package (planned)
 npm install vietnamese-language-support
 ```
 
@@ -94,14 +94,14 @@ vn-lang region "now" south
 ### Programmatic Usage
 
 ```javascript
-import { 
-  fixText, 
-  checkText, 
-  getNativeAlternatives, 
-  searchIdioms, 
-  getRegionalVariant, 
-  detectRegion, 
-  rewriteSentenceStructure 
+import {
+  fixText,
+  checkText,
+  getNativeAlternatives,
+  searchIdioms,
+  getRegionalVariant,
+  detectRegion,
+  rewriteSentenceStructure
 } from 'vietnamese-language-support';
 
 // Full pipeline: fix + alternatives + mixing detection
@@ -175,7 +175,7 @@ const config = loadConfig({
 
 ### Skill Registration
 
-Place in `~/.openclaw/plugin-skills/vietnamese-language-support/` — auto-registers on gateway start.
+Place in `~/.openclaw/plugin-skills/vietnamese-language-support/` - auto-registers on gateway start.
 
 ### Tools (5 tools with JSON schemas)
 
@@ -271,7 +271,7 @@ vn_lang_mixing_detected_rate 4.4
 src/
 ├── index.mjs           # Main entry: fixText, checkText, getNativeAlternatives, searchIddioms, getRegionalVariant, detectRegion, rewriteSentenceStructure, loadConfig
 ├── cli.mjs             # CLI: fix, check, native, idiom, region, health commands
-├── assets.mjs          # Asset loader + hot-reload (chokidar) — P4.4
+├── assets.mjs          # Asset loader + hot-reload (chokidar) - P4.4
 ├── fluency.mjs         # 3-gram fluency model (P2.1): scoreFluency, rankAlternatives
 ├── idiom.mjs           # Idiom injection (P2.3): findRelevantIdioms
 ├── region.mjs          # Regional auto-detect (P2.4): detectRegion, getRegionalVariant
@@ -294,6 +294,13 @@ All dictionaries use **Trie** data structures for O(m) single-pass matching wher
 - `nativeWordReplacementsTrie`: Word-level replacements
 - `domain{IT,Game,Finance,Lao,Tech,Business}Tries`: Domain vocabularies
 
+**Whitelist Protection (Over-correction Prevention)**: Tech terms in the whitelist are protected from spelling/tone corrections. Example:
+```javascript
+fixText('KO technique is used', { whitelist: ['KO'] })
+// Result: "KO technique is used" - "KO" NOT changed to "không"
+```
+This prevents false positives like `KO technique` → `không technique`.
+
 ## 📊 Asset Files
 
 | File | Description | Entries |
@@ -314,7 +321,8 @@ All dictionaries use **Trie** data structures for O(m) single-pass matching wher
 | `fixText` P95 latency | < 5ms | **1.54ms** |
 | Memory delta (1000 calls) | < 50MB | **10MB** |
 | Throughput | > 1000/sec | **~1200/sec** |
-| Test coverage | — | **57 tests passing** |
+| Test coverage | - | **57 tests passing** |
+| Worst-case (concat words) | < 10ms | **2.3ms** (`lamviecquanh` → `làm việc quanh` in 1 pass) |
 
 ```bash
 # Run benchmark
@@ -383,23 +391,42 @@ Auto-detect user's dialect from chat history → serve regional variants.
 4. Run `npm test && npm run benchmark`
 5. Submit PR with description of changes
 
+### CI Pipeline
+
+GitHub Actions workflow runs on every PR:
+- `npm test` - 57 unit tests (Vitest)
+- `npm run benchmark` - P95 regression check (<5ms)
+- `npm run build` - ESM + CommonJS dual export verification
+
+This ensures performance doesn't regress and all exports work.
+
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📋 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## 📦 Publishing
+
+```bash
+# Build and verify
+npm run build && npm test && npm run benchmark
+
+# Publish to npm (when ready)
+npm publish --access public
+```
 
 ## 🙏 Credits
 
 - Built for **OpenClaw** ecosystem (https://openclaw.ai)
 - Vietnamese language data curated from: GitHub VN issues, StackOverflow VN, VionSky codebase, Ba-notes, Ya's worker communications
 - 3-gram fluency model trained on clean Vietnamese corpus (idioms, native patterns, segmentation dict, regional variants, synthetic sentences)
-- Inspired by: VietNLP, Underthesea, VnCoreNLP — but designed for **LLM post-processing**, not general NLP
+- Inspired by: VietNLP, Underthesea, VnCoreNLP - but designed for **LLM post-processing**, not general NLP
 
 ---
 
-**Repository**: https://github.com/openclaw/vietnamese-language-support  
-**Issues**: https://github.com/openclaw/vietnamese-language-support/issues  
+**Repository**: https://github.com/hackerpro108/Vietnamese-Language-Support-Skill
+**Issues**: https://github.com/hackerpro108/Vietnamese-Language-Support-Skill/issues
 **OpenClaw Discord**: #skills-vietnamese
