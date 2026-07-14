@@ -2,10 +2,12 @@
  * Vietnamese Language Support - Core Module (ESM)
  * 
  * Provides Vietnamese spelling/grammar correction, language mixing detection,
- * native fluency suggestions, idiom lookup, and regional variants.
+ * native fluency suggestions, idiom lookup, regional variants, and domain specialization.
  * 
  * P2.1: N-gram Fluency Scoring (3-gram model)
  * P2.2: Context-aware Native Alternatives (relationship, domain, formality)
+ * P3.1: IT/Dev Domain Corpus
+ * P3.2: Lao Language Context
  */
 
 import { join, dirname } from 'path';
@@ -15,11 +17,16 @@ import { findRelevantIdioms } from './idiom.mjs';
 import { detectRegion } from './region.mjs';
 import { rewriteSentenceStructure as rewriteSentence } from './rewriter.mjs';
 import { getAssets } from './assets.mjs';
+import { getITDomainConfig, IT_VOCAB } from './domains/it.mjs';
+import { getLaoDomainConfig, LAO_VOCAB } from './domains/lao.mjs';
+import { getGameDomainConfig, GAME_VOCAB } from './domains/game.mjs';
+import { getFinanceDomainConfig, FINANCE_VOCAB } from './domains/finance.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ASSETS_DIR = join(__dirname, '../assets');
 const NATIVE_PATTERNS_PATH = join(ASSETS_DIR, 'native-patterns.json');
-// ============ Domain-specific Word-level Domain Vocabulary (P2.2) ============
+
+// ============ Domain-specific Word-level Domain Vocabulary (P2.2 + P3.1) ============
 
 const DOMAIN_VOCABULARY = {
   tech: {
@@ -158,6 +165,11 @@ const DOMAIN_VOCABULARY = {
   }
 };
 
+// ============ Domain Exports (P3.1 + P3.2) ============
+
+export { getITDomainConfig, IT_VOCAB };
+export { getLaoDomainConfig, LAO_VOCAB };
+
 // ============ Pronoun Mapping by Relationship (P2.2) ============
 
 const PRONOUN_MAP = {
@@ -239,9 +251,56 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// ============ Domain Integration Helpers ============
+
+function getDomainProtectedTerms(domain) {
+  if (domain === 'it') {
+    return IT_VOCAB.protectedTerms;
+  }
+  if (domain === 'lao') {
+    return Object.keys(LAO_VOCAB.phrases).concat(Object.keys(LAO_VOCAB.wordMap));
+  }
+  if (domain === 'game') {
+    return GAME_VOCAB.protectedTerms;
+  }
+  if (domain === 'finance') {
+    return FINANCE_VOCAB.protectedTerms;
+  }
+  return [];
+}
+
+function getDomainWordReplacements(domain) {
+  if (domain === 'it') {
+    return IT_VOCAB.wordReplacements;
+  }
+  if (domain === 'lao') {
+    return LAO_VOCAB.wordMap;
+  }
+  if (domain === 'game') {
+    return GAME_VOCAB.wordReplacements;
+  }
+  if (domain === 'finance') {
+    return FINANCE_VOCAB.wordReplacements;
+  }
+  return DOMAIN_VOCABULARY[domain] || {};
+}
+
+function getDomainFormalToCasual(domain) {
+  if (domain === 'it') {
+    return IT_VOCAB.formalToCasual;
+  }
+  if (domain === 'game') {
+    return GAME_VOCAB.formalToCasual;
+  }
+  if (domain === 'finance') {
+    return FINANCE_VOCAB.formalToCasual;
+  }
+  return {};
+}
+
 // ============ Core Functions ============
 
-function fixSpellingAndTone(text) {
+function fixSpellingAndTone(text, options = {}) {
   text = normalizeNFC(text);
   const assets = getAssets();
   let result = text;
@@ -257,7 +316,8 @@ function fixSpellingAndTone(text) {
   allFixes.sort((a, b) => b.from.length - a.from.length);
 
   for (const fix of allFixes) {
-    const newResult = replaceWholeWord(result, fix.from, fix.to);
+    const whitelist = options.whitelist || [];
+    const newResult = replaceWholeWord(result, fix.from, fix.to, whitelist);
     if (newResult !== result) {
       let count = 0;
       for (let i = 0; i <= result.length - fix.from.length; i++) {
@@ -339,7 +399,7 @@ function fixSegmentation(text) {
 
 // ============ Language Mixing Detection ============
 
-function detectMixing(text) {
+function detectMixing(text, options = {}) {
   text = normalizeNFC(text);
   const assets = getAssets();
   const issues = [];
@@ -349,6 +409,12 @@ function detectMixing(text) {
   const mixedPatterns = assets.mixingPatterns?.chinese_patterns?.mixed_patterns || [];
   const englishWords = assets.mixingPatterns?.english_patterns?.meaningless_insertions || [];
   const techTerms = new Set((assets.mixingPatterns?.english_patterns?.tech_terms || []).map(t => t.toLowerCase()));
+  
+  // Add domain-specific protected terms to techTerms
+  const domainProtected = options.domain ? getDomainProtectedTerms(options.domain) : [];
+  for (const term of domainProtected) {
+    techTerms.add(term.toLowerCase());
+  }
 
   const techPhrases = new Set([
     'go to', 'api to', 'login to', 'connect to', 'send to', 'write to', 'read from',
@@ -432,10 +498,12 @@ function detectMixing(text) {
   return issues;
 }
 
-function stripMixing(text, whitelist = []) {
+function stripMixing(text, options = {}) {
   let result = normalizeNFC(text);
-  const issues = detectMixing(result);
+  const issues = detectMixing(result, options);
   const intervals = [];
+  const whitelist = options.whitelist || [];
+  
   for (const issue of issues) {
     if (whitelist.length > 0 && whitelist.some(w => w.toLowerCase() === issue.token.toLowerCase())) {
       continue;
@@ -487,7 +555,7 @@ function stripMixing(text, whitelist = []) {
   return { text: result, issues };
 }
 
-// ============ Context-aware Native Alternatives (P2.2) ============
+// ============ Context-aware Native Alternatives (P2.2 + P3.1) ============
 
 function applyPronounMapping(text, relationship) {
   const mapping = PRONOUN_MAP[relationship] || PRONOUN_MAP.peer;
@@ -499,7 +567,7 @@ function applyPronounMapping(text, relationship) {
 }
 
 function applyDomainVocabulary(text, domain) {
-  const vocab = DOMAIN_VOCABULARY[domain];
+  const vocab = getDomainWordReplacements(domain);
   if (!vocab) return text;
   
   let result = text;
@@ -509,21 +577,33 @@ function applyDomainVocabulary(text, domain) {
   return result;
 }
 
-function getFormalLevelAdjustment(text, formality) {
+function applyDomainFormalToCasual(text, domain) {
+  const mappings = getDomainFormalToCasual(domain);
+  let result = text;
+  for (const [formal, casuals] of Object.entries(mappings)) {
+    if (result.includes(formal)) {
+      result = result.replace(formal, casuals[0]);
+    }
+  }
+  return result;
+}
+
+function getFormalLevelAdjustment(text, formality, domain) {
   if (formality === 'auto') return text;
   
   const assets = getAssets();
   const formalToCasual = assets.nativePatterns?.formal_to_casual || {};
+  let result = text;
   
   if (formality === 'casual') {
-    // Apply formal->casual mappings
-    let result = text;
+    // Apply general formal->casual mappings
     for (const [formal, casuals] of Object.entries(formalToCasual)) {
       if (result.includes(formal)) {
         result = result.replace(formal, casuals[0]);
       }
     }
-    return result;
+    // Apply domain-specific formal->casual mappings
+    result = applyDomainFormalToCasual(result, domain);
   }
   
   if (formality === 'formal') {
@@ -532,7 +612,7 @@ function getFormalLevelAdjustment(text, formality) {
     return text;
   }
   
-  return text;
+  return result;
 }
 
 /**
@@ -540,7 +620,7 @@ function getFormalLevelAdjustment(text, formality) {
  * @param {string} text - Input text
  * @param {Object} context - Context object
  * @param {string} context.relationship - 'peer' | 'older' | 'younger' | 'formal'
- * @param {string} context.domain - 'general' | 'tech' | 'business' | 'lao'
+ * @param {string} context.domain - 'general' | 'tech' | 'business' | 'it' | 'lao'
  * @param {string} context.formality - 'auto' | 'formal' | 'casual'
  * @returns {Array} Ranked alternatives with fluency scores
  */
@@ -634,13 +714,13 @@ export function getNativeAlternatives(text, context = {}) {
   }
 
   // Formality adjustment
-  const formalityMapped = getFormalLevelAdjustment(text, formality);
+  const formalityMapped = getFormalLevelAdjustment(text, formality, domain);
   if (formalityMapped !== text) {
     contextAlternatives.push({
       type: 'formality_adjustment',
       original: text,
       alternative: formalityMapped,
-      context: { formality, rule: `formality_${formality}` }
+      context: { formality, domain, rule: `formality_${formality}` }
     });
   }
 
@@ -648,9 +728,7 @@ export function getNativeAlternatives(text, context = {}) {
   const allAlternatives = [...alternatives, ...contextAlternatives];
 
   // 5. Rank by fluency (P2.1)
-  // For each alternative, create the full suggested text and score it
   const candidateTexts = allAlternatives.map(alt => {
-    // Generate the suggested text
     let suggestedText = alt.alternative || alt.alternatives?.[0] || alt.context || text;
     if (alt.type === 'formal_to_casual' || alt.type === 'word_replacement') {
       suggestedText = alt.context || suggestedText;
@@ -682,35 +760,51 @@ export function fixText(text, options = {}) {
     enableSegmentation = true,
     stripMixing: doStripMixing = true,
     formalLevel = 'auto',
-    whitelist = []
+    whitelist = [],
+    domain = 'general'
   } = options;
+  
   let result = normalizeNFC(text);
   const allCorrections = [];
   let allMixingIssues = [];
+  
   if (fixSpelling || fixTone) {
-    const { text: fixed, corrections } = fixSpellingAndTone(result);
+    const { text: fixed, corrections } = fixSpellingAndTone(result, { whitelist });
     result = fixed;
     allCorrections.push(...corrections);
   }
+  
   if (enableSegmentation) {
     const { text: fixed, corrections } = fixSegmentation(result);
     result = fixed;
     allCorrections.push(...corrections);
   }
+  
+  // Apply domain-specific vocabulary replacements
+  if (domain !== 'general') {
+    const domainMapped = applyDomainVocabulary(result, domain);
+    if (domainMapped !== result) {
+      allCorrections.push({ type: 'domain_vocabulary', from: result, to: domainMapped });
+      result = domainMapped;
+    }
+  }
+  
   if (doStripMixing) {
-    const { text: fixed, issues } = stripMixing(result, whitelist);
+    const { text: fixed, issues } = stripMixing(result, { whitelist, domain });
     result = fixed;
     allMixingIssues.push(...issues);
   }
-  const alternatives = getNativeAlternatives(result);
+  
+  const alternatives = getNativeAlternatives(result, { domain, formalLevel });
+  
   return { original: text, fixed: result, corrections: allCorrections, mixingIssues: allMixingIssues, nativeAlternatives: alternatives };
 }
 
-export function checkText(text) {
+export function checkText(text, options = {}) {
   text = normalizeNFC(text);
   const { text: fixed, corrections } = fixSpellingAndTone(text);
   const { text: segmented, corrections: segCorrections } = fixSegmentation(fixed);
-  const issues = detectMixing(segmented);
+  const issues = detectMixing(segmented, options);
   return { original: text, corrections: [...corrections, ...segCorrections], mixingIssues: issues };
 }
 
@@ -791,6 +885,12 @@ export async function healthCheck() {
       },
       idioms: (assets.idioms?.idioms || []).length,
       regionalVariants: Object.keys(assets.regionalVariants?.regions || {}).length
+    },
+    domains: {
+      it: IT_VOCAB.protectedTerms.length,
+      lao: Object.keys(LAO_VOCAB.phrases).length + Object.keys(LAO_VOCAB.wordMap).length,
+      game: GAME_VOCAB.protectedTerms.length,
+      finance: FINANCE_VOCAB.protectedTerms.length
     },
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
