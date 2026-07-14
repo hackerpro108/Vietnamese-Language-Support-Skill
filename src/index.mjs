@@ -3,51 +3,201 @@
  * 
  * Provides Vietnamese spelling/grammar correction, language mixing detection,
  * native fluency suggestions, idiom lookup, and regional variants.
+ * 
+ * P2.1: N-gram Fluency Scoring (3-gram model)
+ * P2.2: Context-aware Native Alternatives (relationship, domain, formality)
  */
 
-import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { scoreFluency, rankAlternatives } from './fluency.mjs';
+import { findRelevantIdioms } from './idiom.mjs';
+import { detectRegion } from './region.mjs';
+import { rewriteSentenceStructure as rewriteSentence } from './rewriter.mjs';
+import { getAssets } from './assets.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ASSETS_DIR = join(__dirname, '../assets');
+const NATIVE_PATTERNS_PATH = join(ASSETS_DIR, 'native-patterns.json');
+// ============ Domain-specific Word-level Domain Vocabulary (P2.2) ============
 
-// ============ Asset Loading ============
-
-function loadAssets() {
-  const files = [
-    'spelling-dict.json',
-    'tone-dict.json',
-    'segmentation-dict.json',
-    'native-patterns.json',
-    'mixing-patterns.json',
-    'idioms.json',
-    'regional-variants.json'
-  ];
-
-  const assets = {};
-  for (const file of files) {
-    try {
-      const content = readFileSync(join(ASSETS_DIR, file), 'utf-8');
-      const key = file
-        .replace('.json', '')
-        .replace(/-dict$/, 'Dict')
-        .replace(/-patterns$/, 'Patterns')
-        .replace(/-variants$/, 'Variants');
-      assets[key] = JSON.parse(content);
-    } catch (err) {
-      console.warn(`[vn-lang] Failed to load ${file}:`, err.message);
-      assets[key] = {};
-    }
+const DOMAIN_VOCABULARY = {
+  tech: {
+    'cài': 'cài đặt',
+    'xóa': 'xoá',
+    'sửa': 'chỉnh sửa',
+    'chạy': 'thực thi',
+    'build': 'build',
+    'deploy': 'triển khai',
+    'debug': 'gỡ lỗi',
+    'fix': 'sửa lỗi',
+    'test': 'kiểm thử',
+    'run': 'chạy',
+    'start': 'khởi động',
+    'stop': 'dừng',
+    'restart': 'khởi động lại',
+    'update': 'cập nhật',
+    'upgrade': 'nâng cấp',
+    'install': 'cài đặt',
+    'uninstall': 'gỡ cài đặt',
+    'config': 'cấu hình',
+    'setting': 'cài đặt',
+    'env': 'biến môi trường',
+    'variable': 'biến',
+    'function': 'hàm',
+    'method': 'phương thức',
+    'class': 'lớp',
+    'object': 'đối tượng',
+    'api': 'API',
+    'endpoint': 'điểm cuối',
+    'request': 'yêu cầu',
+    'response': 'phản hồi',
+    'server': 'máy chủ',
+    'client': 'máy khách',
+    'database': 'cơ sở dữ liệu',
+    'cache': 'bộ nhớ đệm',
+    'token': 'token',
+    'auth': 'xác thực',
+    'login': 'đăng nhập',
+    'logout': 'đăng xuất',
+    'register': 'đăng ký',
+    'session': 'phiên',
+    'cookie': 'cookie',
+    'header': 'tiêu đề',
+    'body': 'phần thân',
+    'query': 'truy vấn',
+    'param': 'tham số',
+    'error': 'lỗi',
+    'exception': 'ngoại lệ',
+    'bug': 'lỗi',
+    'issue': 'vấn đề',
+    'feature': 'tính năng',
+    'commit': 'commit',
+    'push': 'đẩy',
+    'pull': 'kéo',
+    'merge': 'ghép',
+    'branch': 'nhánh',
+    'pr': 'pull request',
+    'review': 'xem xét',
+    'approve': 'phê duyệt',
+    'deploy': 'triển khai',
+    'release': 'phát hành',
+    'version': 'phiên bản',
+    'changelog': 'nhật ký thay đổi',
+  },
+  business: {
+    'mua': 'đặt hàng',
+    'bán': 'phân phối',
+    'khách': 'khách hàng',
+    'hàng hóa': 'sản phẩm',
+    'giá': 'giá cả',
+    'giảm giá': 'khuyến mãi',
+    'sale': 'khuyến mãi',
+    'discount': 'giảm giá',
+    'order': 'đơn hàng',
+    'invoice': 'hóa đơn',
+    'payment': 'thanh toán',
+    'receipt': 'biên lai',
+    'refund': 'hoàn tiền',
+    'return': 'trả hàng',
+    'exchange': 'đổi hàng',
+    'warranty': 'bảo hành',
+    'support': 'hỗ trợ',
+    'contact': 'liên hệ',
+    'contract': 'hợp đồng',
+    'deal': 'thỏa thuận',
+    'partner': 'đối tác',
+    'vendor': 'nhà cung cấp',
+    'supplier': 'nhà cung cấp',
+    'revenue': 'doanh thu',
+    'profit': 'lợi nhuận',
+    'cost': 'chi phí',
+    'budget': 'ngân sách',
+    'forecast': 'dự báo',
+    'target': 'mục tiêu',
+    'kpi': 'KPI',
+    'metric': 'chỉ số',
+    'report': 'báo cáo',
+    'meeting': 'cuộc họp',
+    'deadline': 'hạn chót',
+    'schedule': 'lịch trình',
+    'timeline': 'dòng thời gian',
+    'milestone': 'cột mốc',
+    'deliverable': 'kết quả giao',
+  },
+  lao: {
+    // Vietnamese-Lao phrasebook mappings (from Ba's notes)
+    'xin chào': 'ສະບາຍດີ (sabaidi)',
+    'cảm ơn': 'ຂອບໃຈ (khob chai)',
+    'xin lỗi': 'ຂໍໂທດ (kho thot)',
+    'tạm biệt': 'ລາກ່າ (la ka)',
+    'bạn khỏe không': 'ເຈົ້າສະບາຍດີບໍ (chao sabaidi bo)',
+    'tôi hiểu': 'ຂ້ອຍເຂົ້າໃຈ (khoy khao jai)',
+    'tôi không hiểu': 'ຂ້ອຍບໍ່ເຂົ້າໃຈ (khoy bo khao jai)',
+    'bao nhiêu tiền': 'ທີ່ໃດ (thi dai)',
+    'đắt quá': 'ແພງເກີນ (phaeng khuen)',
+    'rẻ hơn được không': 'ຂໍໃຫໝົດໄດ້ບໍ (kho ham lot dai bo)',
+    'nước': 'ນ້ຳ (nam)',
+    'cơm': 'ເຂົ້າໜຽມ (khao niam)',
+    'đi': 'ໄປ (pai)',
+    'đến': 'ມາ (ma)',
+    'xe': 'ລົດ (lot)',
+    'xe buýt': 'ລົດເມ (lot me)',
+    'sân bay': 'ສະຫນາມບິນ (sanam bin)',
+    'khách sạn': 'ໂຮງແຮມ (hong haem)',
+    'phòng': 'ຫ້ອງ (hong)',
+    'ngủ': 'ນອນ (non)',
+    'ăn': 'ກິນ (kin)',
+    'uống': 'ດື່ມ (duem)',
+    'đẹp': 'ງາມ (ngam)',
+    'xấu': 'ບໍ່ງາມ (bo ngam)',
+    'to': 'ໃຫຍ່ (nyai)',
+    'nhỏ': 'ເນື້ອຍ (nuea)',
+    'nóng': 'ຮ້ອນ (hon)',
+    'lạnh': 'ເຢັນ (yen)',
   }
-  return assets;
-}
+};
 
-let assetsCache = null;
-function getAssets() {
-  if (!assetsCache) assetsCache = loadAssets();
-  return assetsCache;
-}
+// ============ Pronoun Mapping by Relationship (P2.2) ============
+
+const PRONOUN_MAP = {
+  peer: {
+    'tôi': 'mình',
+    'bạn': 'bạn',
+    'anh': 'anh',
+    'chị': 'chị',
+    'em': 'em',
+    'tao': 'mình',
+    'tui': 'mình',
+  },
+  older: {
+    'tôi': 'em',
+    'bạn': 'anh/chị',
+    'anh': 'anh',
+    'chị': 'chị',
+    'em': 'em',
+    'tao': 'em',
+    'tui': 'em',
+  },
+  younger: {
+    'tôi': 'anh/chị',
+    'bạn': 'em',
+    'anh': 'anh',
+    'chị': 'chị',
+    'em': 'em',
+    'tao': 'anh/chị',
+    'tui': 'anh/chị',
+  },
+  formal: {
+    'tôi': 'tôi',
+    'bạn': 'bạn',
+    'anh': 'anh',
+    'chị': 'chị',
+    'em': 'em',
+    'tao': 'tôi',
+    'tui': 'tôi',
+  },
+};
 
 // ============ Helpers ============
 
@@ -83,6 +233,10 @@ function replaceWholeWord(text, search, replace, whitelist = []) {
 
 function normalizeNFC(text) {
   return text.normalize('NFC');
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // ============ Core Functions ============
@@ -333,43 +487,192 @@ function stripMixing(text, whitelist = []) {
   return { text: result, issues };
 }
 
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// ============ Context-aware Native Alternatives (P2.2) ============
+
+function applyPronounMapping(text, relationship) {
+  const mapping = PRONOUN_MAP[relationship] || PRONOUN_MAP.peer;
+  let result = text;
+  for (const [from, to] of Object.entries(mapping)) {
+    result = replaceWholeWord(result, from, to);
+  }
+  return result;
 }
 
-function getNativeAlternatives(text) {
+function applyDomainVocabulary(text, domain) {
+  const vocab = DOMAIN_VOCABULARY[domain];
+  if (!vocab) return text;
+  
+  let result = text;
+  for (const [from, to] of Object.entries(vocab)) {
+    result = replaceWholeWord(result, from, to);
+  }
+  return result;
+}
+
+function getFormalLevelAdjustment(text, formality) {
+  if (formality === 'auto') return text;
+  
+  const assets = getAssets();
+  const formalToCasual = assets.nativePatterns?.formal_to_casual || {};
+  
+  if (formality === 'casual') {
+    // Apply formal->casual mappings
+    let result = text;
+    for (const [formal, casuals] of Object.entries(formalToCasual)) {
+      if (result.includes(formal)) {
+        result = result.replace(formal, casuals[0]);
+      }
+    }
+    return result;
+  }
+  
+  if (formality === 'formal') {
+    // Reverse: casual -> formal (if we have mappings)
+    // For now, keep as-is
+    return text;
+  }
+  
+  return text;
+}
+
+/**
+ * Get native Vietnamese alternatives with context awareness
+ * @param {string} text - Input text
+ * @param {Object} context - Context object
+ * @param {string} context.relationship - 'peer' | 'older' | 'younger' | 'formal'
+ * @param {string} context.domain - 'general' | 'tech' | 'business' | 'lao'
+ * @param {string} context.formality - 'auto' | 'formal' | 'casual'
+ * @returns {Array} Ranked alternatives with fluency scores
+ */
+export function getNativeAlternatives(text, context = {}) {
+  const {
+    relationship = 'peer',
+    domain = 'general',
+    formality = 'auto'
+  } = context;
+
   text = normalizeNFC(text);
   const assets = getAssets();
   const alternatives = [];
+
+  // 1. Formal to casual mappings
   const formalToCasual = assets.nativePatterns?.formal_to_casual || {};
   for (const [formal, casuals] of Object.entries(formalToCasual)) {
     if (text.includes(formal)) {
-      alternatives.push({ type: 'formal_to_casual', original: formal, alternatives: casuals, context: text.replace(formal, casuals[0]) });
+      alternatives.push({ 
+        type: 'formal_to_casual', 
+        original: formal, 
+        alternatives: casuals, 
+        context: text.replace(formal, casuals[0]) 
+      });
     }
   }
+
+  // 2. Word replacements (slang/tech synonyms)
   const wordReplacements = assets.nativePatterns?.word_replacements || {};
   for (const [word, replacements] of Object.entries(wordReplacements)) {
     const altArray = Array.isArray(replacements) ? replacements : [replacements];
     for (let i = 0; i <= text.length - word.length; i++) {
       if (text.slice(i, i + word.length).toLowerCase() === word.toLowerCase() && isWordBoundary(text, i, word.length)) {
-        alternatives.push({ type: 'word_replacement', original: word, alternatives: altArray, context: text.replace(new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), altArray[0]) });
+        alternatives.push({ 
+          type: 'word_replacement', 
+          original: word, 
+          alternatives: altArray, 
+          context: text.replace(new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), altArray[0]) 
+        });
         break;
       }
     }
   }
+
+  // 3. Sentence structure improvements
   const passiveToActive = assets.nativePatterns?.sentence_structures?.passive_to_active || {};
   for (const [passive, active] of Object.entries(passiveToActive)) {
     if (text.includes(passive)) {
-      alternatives.push({ type: 'passive_to_active', original: passive, alternative: active });
+      alternatives.push({ 
+        type: 'passive_to_active', 
+        original: passive, 
+        alternative: active 
+      });
     }
   }
+
   const wordyToConcise = assets.nativePatterns?.sentence_structures?.wordy_to_concise || {};
   for (const [wordy, concise] of Object.entries(wordyToConcise)) {
     if (text.includes(wordy)) {
-      alternatives.push({ type: 'wordy_to_concise', original: wordy, alternative: concise });
+      alternatives.push({ 
+        type: 'wordy_to_concise', 
+        original: wordy, 
+        alternative: concise 
+      });
     }
   }
-  return alternatives;
+
+  // 4. Context-aware transformations
+  const contextAlternatives = [];
+
+  // Pronoun mapping based on relationship
+  const pronounMapped = applyPronounMapping(text, relationship);
+  if (pronounMapped !== text) {
+    contextAlternatives.push({
+      type: 'pronoun_mapping',
+      original: text,
+      alternative: pronounMapped,
+      context: { relationship, rule: `pronoun_${relationship}` }
+    });
+  }
+
+  // Domain-specific vocabulary
+  const domainMapped = applyDomainVocabulary(text, domain);
+  if (domainMapped !== text) {
+    contextAlternatives.push({
+      type: 'domain_vocabulary',
+      original: text,
+      alternative: domainMapped,
+      context: { domain, rule: `domain_${domain}` }
+    });
+  }
+
+  // Formality adjustment
+  const formalityMapped = getFormalLevelAdjustment(text, formality);
+  if (formalityMapped !== text) {
+    contextAlternatives.push({
+      type: 'formality_adjustment',
+      original: text,
+      alternative: formalityMapped,
+      context: { formality, rule: `formality_${formality}` }
+    });
+  }
+
+  // Combine all alternatives
+  const allAlternatives = [...alternatives, ...contextAlternatives];
+
+  // 5. Rank by fluency (P2.1)
+  // For each alternative, create the full suggested text and score it
+  const candidateTexts = allAlternatives.map(alt => {
+    // Generate the suggested text
+    let suggestedText = alt.alternative || alt.alternatives?.[0] || alt.context || text;
+    if (alt.type === 'formal_to_casual' || alt.type === 'word_replacement') {
+      suggestedText = alt.context || suggestedText;
+    }
+    return suggestedText;
+  });
+
+  // Rank using fluency model
+  const ranked = rankAlternatives(candidateTexts, text);
+
+  // Attach fluency scores to alternatives
+  const scoredAlternatives = allAlternatives.map((alt, idx) => {
+    const rankInfo = ranked[idx] || { candidate: candidateTexts[idx], score: 0 };
+    return {
+      ...alt,
+      fluency: rankInfo.score,
+      suggestedText: rankInfo.candidate
+    };
+  });
+
+  // Sort by fluency descending
+  return scoredAlternatives.sort((a, b) => (b.fluency || 0) - (a.fluency || 0));
 }
 
 export function fixText(text, options = {}) {
@@ -411,7 +714,7 @@ export function checkText(text) {
   return { original: text, corrections: [...corrections, ...segCorrections], mixingIssues: issues };
 }
 
-export { fixSpellingAndTone, fixSegmentation, getNativeAlternatives, detectMixing, stripMixing };
+export { fixSpellingAndTone, fixSegmentation, detectMixing, stripMixing };
 
 export function searchIdioms(keyword) {
   const assets = getAssets();
@@ -465,6 +768,9 @@ export function loadConfig(userConfig = {}) {
   return { ...defaults, ...userConfig };
 }
 
+// Export fluency functions
+export { scoreFluency, rankAlternatives };
+
 export async function healthCheck() {
   const assets = getAssets();
   return {
@@ -490,6 +796,15 @@ export async function healthCheck() {
     timestamp: new Date().toISOString()
   };
 }
+
+// P2.3: Idiom Injection
+export { findRelevantIdioms };
+
+// P2.4: Regional Auto-detect
+export { detectRegion };
+
+// P2.5: Sentence Rewriter
+export { rewriteSentence };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   import('./cli.mjs');

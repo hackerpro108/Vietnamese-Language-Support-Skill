@@ -186,7 +186,13 @@
       "được review": "review xong",
       "được approve": "approve xong",
       "được merge": "merge xong",
-      "được release": "release xong"
+      "được release": "release xong",
+      "được làm bởi": "làm",
+      "được xử lý bởi": "xử lý",
+      "được sửa bởi": "sửa",
+      "được viết bởi": "viết",
+      "được tạo bởi": "tạo",
+      "được phát triển bởi": "phát triển"
     },
     "wordy_to_concise": {
       "làm cho": "làm",
@@ -202,7 +208,22 @@
       "đề nghị cho": "đề nghị",
       "xin cho": "xin",
       "cảm ơn cho": "cảm ơn",
-      "xin lỗi cho": "xin lỗi"
+      "xin lỗi cho": "xin lỗi",
+      "vì lý do là vì": "vì",
+      "bởi vì": "vì",
+      "do đó": "nên",
+      "tuy nhiên": "nhưng",
+      "tuy là": "dù",
+      "dù là": "dù",
+      "nếu là": "nếu",
+      "trường hợp": "khi",
+      "khi nào": "khi",
+      "lúc nào": "khi",
+      "tại thời điểm": "khi",
+      "không chẳng": "không",
+      "không hề": "không",
+      "chẳng hề": "không",
+      "không không": ""
     }
   }
 }
