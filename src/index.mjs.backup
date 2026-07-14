@@ -196,41 +196,23 @@ function detectMixing(text) {
   const englishWords = assets.mixingPatterns?.english_patterns?.meaningless_insertions || [];
   const techTerms = new Set((assets.mixingPatterns?.english_patterns?.tech_terms || []).map(t => t.toLowerCase()));
 
-  const techPhrases = new Set([
-    'go to', 'api to', 'login to', 'connect to', 'send to', 'write to', 'read from',
-    'import from', 'export to', 'deploy to', 'push to', 'pull from', 'commit to',
-    'merge to', 'switch to', 'checkout to', 'rebase to', 'reset to', 'build to',
-    'run to', 'test to', 'lint to', 'format to', 'install to', 'update to',
-    'upgrade to', 'downgrade to', 'migrate to', 'backup to', 'restore from',
-    'query to', 'select from', 'insert into', 'update set', 'delete from',
-    'join on', 'where', 'group by', 'order by', 'limit', 'offset'
-  ]);
-
-  const isChineseChar = (char) => {
-    const code = char.charCodeAt(0);
-    return code >= 0x4E00 && code <= 0x9FFF;
-  };
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const isChinese = isChineseChar(char);
-    if (isChinese) {
-      issues.push({ type: 'chinese_sequence', token: char, start: i, length: 1 });
+  for (const char of chineseChars) {
+    const positions = [];
+    let idx = text.indexOf(char);
+    while (idx !== -1) {
+      positions.push(idx);
+      idx = text.indexOf(char, idx + 1);
     }
-    if (i + 1 < text.length) {
-      const char2 = text[i + 1];
-      const twoChar = char + char2;
-      if (chineseWords.includes(twoChar) || (isChinese && isChineseChar(char2))) {
-        issues.push({ type: 'chinese_sequence', token: twoChar, start: i, length: 2 });
-      }
+    if (positions.length > 0) {
+      issues.push({ type: 'chinese_char', token: char, positions });
     }
-    if (i + 2 < text.length) {
-      const char2 = text[i + 1];
-      const char3 = text[i + 2];
-      const threeChar = char + char2 + char3;
-      if (chineseWords.includes(threeChar) || (isChinese && isChineseChar(char2) && isChineseChar(char3))) {
-        issues.push({ type: 'chinese_sequence', token: threeChar, start: i, length: 3 });
-      }
+  }
+
+  for (const word of chineseWords) {
+    let idx = text.indexOf(word);
+    while (idx !== -1) {
+      issues.push({ type: 'chinese_word', token: word, position: idx });
+      idx = text.indexOf(word, idx + 1);
     }
   }
 
@@ -246,28 +228,9 @@ function detectMixing(text) {
   let pos = 0;
   for (const word of words) {
     if (word.trim()) {
-      const clean = word.toLowerCase().replace(/[.,!?;:()\[\]{}""']/g, '');
+      const clean = word.toLowerCase().replace(/[.,!?;:()[\]{}"']/g, '');
       if (englishWords.includes(clean) && !techTerms.has(clean)) {
-        const wordIndex = words.indexOf(word);
-        let prevWord1 = '', prevWord2 = '', nextWord1 = '', nextWord2 = '';
-        let count = 0;
-        for (let i = wordIndex - 2; i >= 0 && count < 2; i -= 2) {
-          if (words[i].trim()) {
-            const w = words[i].toLowerCase().replace(/[.,!?;:()\[\]{}""']/g, '');
-            if (count === 0) prevWord1 = w; else if (count === 1) prevWord2 = w; count++;
-          }
-        }
-        count = 0;
-        for (let i = wordIndex + 2; i < words.length && count < 2; i += 2) {
-          if (words[i].trim()) {
-            const w = words[i].toLowerCase().replace(/[.,!?;:()\[\]{}""']/g, '');
-            if (count === 0) nextWord1 = w; else if (count === 1) nextWord2 = w; count++;
-          }
-        }
-        const isTechContext = (techPhrases.has(`${prevWord1} ${clean}`) || techPhrases.has(`${prevWord2} ${clean}`) || techPhrases.has(`${clean} ${nextWord1}`) || techPhrases.has(`${clean} ${nextWord2}`)) || techTerms.has(clean);
-        if (!isTechContext) {
-          issues.push({ type: 'english_insertion', token: word, position: pos });
-        }
+        issues.push({ type: 'english_insertion', token: word, position: pos });
       }
       pos += word.length;
     } else {
@@ -281,96 +244,85 @@ function detectMixing(text) {
 function stripMixing(text, whitelist = []) {
   let result = normalizeNFC(text);
   const issues = detectMixing(result);
-  const intervals = [];
+
+  issues.sort((a, b) => {
+    const posA = a.positions ? Math.max(...a.positions) : (a.position || 0);
+    const posB = b.positions ? Math.max(...b.positions) : (b.position || 0);
+    return posB - posA;
+  });
+
   for (const issue of issues) {
     if (whitelist.length > 0 && whitelist.some(w => w.toLowerCase() === issue.token.toLowerCase())) {
       continue;
     }
-    if (issue.type === 'chinese_sequence') {
-      intervals.push({ start: issue.start, end: issue.start + issue.length - 1 });
-    } else if (issue.type === 'mixed_pattern') {
-      let idx = result.indexOf(issue.token);
-      while (idx !== -1) {
-        intervals.push({ start: idx, end: idx + issue.token.length - 1 });
-        idx = result.indexOf(issue.token, idx + 1);
+    if (issue.type === 'chinese_char') {
+      for (const pos of [...issue.positions].sort((a, b) => b - a)) {
+        result = result.slice(0, pos) + result.slice(pos + 1);
       }
+    } else if (issue.type === 'chinese_word' || issue.type === 'mixed_pattern') {
+      result = result.replace(new RegExp(issue.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
     } else if (issue.type === 'english_insertion') {
-      const regex = new RegExp(`\\b${escapeRegExp(issue.token)}\\b`, 'g');
-      let match;
-      while ((match = regex.exec(result)) !== null) {
-        intervals.push({ start: match.index, end: match.index + issue.token.length - 1 });
-      }
+      result = replaceWholeWord(result, issue.token, '', whitelist);
     }
   }
-  if (intervals.length === 0) return { text: result, issues };
-  intervals.sort((a, b) => a.start - b.start);
-  const merged = [];
-  let current = intervals[0];
-  for (let i = 1; i < intervals.length; i++) {
-    const interval = intervals[i];
-    if (interval.start <= current.end + 1) {
-      current.end = Math.max(current.end, interval.end);
-    } else {
-      merged.push(current);
-      current = interval;
-    }
-  }
-  merged.push(current);
-  let lastIndex = result.length;
-  let parts = [];
-  for (let i = merged.length - 1; i >= 0; i--) {
-    const interval = merged[i];
-    if (interval.end + 1 < lastIndex) {
-      parts.push(result.substring(interval.end + 1, lastIndex));
-    }
-    lastIndex = interval.start;
-  }
-  if (lastIndex > 0) {
-    parts.push(result.substring(0, lastIndex));
-  }
-  parts.reverse();
-  result = parts.join('').replace(/\s+/g, ' ').trim();
+
+  result = result.replace(/\s+/g, ' ').trim();
   return { text: result, issues };
 }
 
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+// ============ Native Alternatives ============
 
 function getNativeAlternatives(text) {
   text = normalizeNFC(text);
   const assets = getAssets();
   const alternatives = [];
+
   const formalToCasual = assets.nativePatterns?.formal_to_casual || {};
   for (const [formal, casuals] of Object.entries(formalToCasual)) {
     if (text.includes(formal)) {
-      alternatives.push({ type: 'formal_to_casual', original: formal, alternatives: casuals, context: text.replace(formal, casuals[0]) });
+      alternatives.push({
+        type: 'formal_to_casual',
+        original: formal,
+        alternatives: casuals,
+        context: text.replace(formal, casuals[0])
+      });
     }
   }
+
   const wordReplacements = assets.nativePatterns?.word_replacements || {};
   for (const [word, replacements] of Object.entries(wordReplacements)) {
     const altArray = Array.isArray(replacements) ? replacements : [replacements];
     for (let i = 0; i <= text.length - word.length; i++) {
       if (text.slice(i, i + word.length).toLowerCase() === word.toLowerCase() && isWordBoundary(text, i, word.length)) {
-        alternatives.push({ type: 'word_replacement', original: word, alternatives: altArray, context: text.replace(new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), altArray[0]) });
+        alternatives.push({
+          type: 'word_replacement',
+          original: word,
+          alternatives: altArray,
+          context: text.replace(new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), altArray[0])
+        });
         break;
       }
     }
   }
+
   const passiveToActive = assets.nativePatterns?.sentence_structures?.passive_to_active || {};
   for (const [passive, active] of Object.entries(passiveToActive)) {
     if (text.includes(passive)) {
       alternatives.push({ type: 'passive_to_active', original: passive, alternative: active });
     }
   }
+
   const wordyToConcise = assets.nativePatterns?.sentence_structures?.wordy_to_concise || {};
   for (const [wordy, concise] of Object.entries(wordyToConcise)) {
     if (text.includes(wordy)) {
       alternatives.push({ type: 'wordy_to_concise', original: wordy, alternative: concise });
     }
   }
+
   return alternatives;
 }
+
+// ============ Public API ============
 
 export function fixText(text, options = {}) {
   const {
@@ -381,26 +333,38 @@ export function fixText(text, options = {}) {
     formalLevel = 'auto',
     whitelist = []
   } = options;
+
   let result = normalizeNFC(text);
   const allCorrections = [];
   let allMixingIssues = [];
+
   if (fixSpelling || fixTone) {
     const { text: fixed, corrections } = fixSpellingAndTone(result);
     result = fixed;
     allCorrections.push(...corrections);
   }
+
   if (enableSegmentation) {
     const { text: fixed, corrections } = fixSegmentation(result);
     result = fixed;
     allCorrections.push(...corrections);
   }
+
   if (doStripMixing) {
     const { text: fixed, issues } = stripMixing(result, whitelist);
     result = fixed;
     allMixingIssues.push(...issues);
   }
+
   const alternatives = getNativeAlternatives(result);
-  return { original: text, fixed: result, corrections: allCorrections, mixingIssues: allMixingIssues, nativeAlternatives: alternatives };
+
+  return {
+    original: text,
+    fixed: result,
+    corrections: allCorrections,
+    mixingIssues: allMixingIssues,
+    nativeAlternatives: alternatives
+  };
 }
 
 export function checkText(text) {
@@ -408,7 +372,12 @@ export function checkText(text) {
   const { text: fixed, corrections } = fixSpellingAndTone(text);
   const { text: segmented, corrections: segCorrections } = fixSegmentation(fixed);
   const issues = detectMixing(segmented);
-  return { original: text, corrections: [...corrections, ...segCorrections], mixingIssues: issues };
+
+  return {
+    original: text,
+    corrections: [...corrections, ...segCorrections],
+    mixingIssues: issues
+  };
 }
 
 export { fixSpellingAndTone, fixSegmentation, getNativeAlternatives, detectMixing, stripMixing };
@@ -417,16 +386,19 @@ export function searchIdioms(keyword) {
   const assets = getAssets();
   const results = [];
   const kw = normalizeNFC(keyword).toLowerCase();
+
   for (const idiom of assets.idioms?.idioms || []) {
     const haystack = `${idiom.phrase} ${idiom.meaning} ${idiom.english} ${idiom.category} ${idiom.usage || ''}`.toLowerCase();
     if (haystack.includes(kw)) results.push(idiom);
   }
+
   for (const proverb of assets.idioms?.proverbs || []) {
     const haystack = `${proverb.phrase} ${proverb.meaning}`.toLowerCase();
     if (haystack.includes(kw)) {
       results.push({ ...proverb, category: 'proverb', english: '', usage: '' });
     }
   }
+
   return results;
 }
 
@@ -435,13 +407,17 @@ export function getRegionalVariant(word, region) {
   const assets = getAssets();
   const regionData = assets.regionalVariants?.regions?.[region];
   if (!regionData) return word;
+
   const vocab = regionData.vocabulary || {};
   if (vocab[word]) return vocab[word];
+
   for (const [key, value] of Object.entries(vocab)) {
     if (key.toLowerCase() === word.toLowerCase()) return value;
   }
+
   const phrases = regionData.phrases || {};
   if (phrases[word]) return phrases[word];
+
   return word;
 }
 
@@ -462,6 +438,7 @@ export function loadConfig(userConfig = {}) {
     stripMixing: true,
     logLevel: 'info'
   };
+
   return { ...defaults, ...userConfig };
 }
 
@@ -491,6 +468,9 @@ export async function healthCheck() {
   };
 }
 
+// ============ CLI Entry Point (conditional) ============
+
+// Only import CLI when run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   import('./cli.mjs');
 }
