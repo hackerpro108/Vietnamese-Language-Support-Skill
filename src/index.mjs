@@ -262,8 +262,7 @@ function stripMixing(text, whitelist = []) {
     } else if (issue.type === 'chinese_word' || issue.type === 'mixed_pattern') {
       result = result.replace(new RegExp(issue.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
     } else if (issue.type === 'english_insertion') {
-      const { text: newText } = replaceWholeWord(result, issue.token, '', whitelist);
-      result = newText;
+      result = replaceWholeWord(result, issue.token, '', whitelist);
     }
   }
 
@@ -451,7 +450,7 @@ export async function healthCheck() {
     assetsLoaded: {
       spellingDict: Object.keys(assets.spellingDict?.spelling || {}).length,
       toneDict: Object.keys(assets.toneDict || {}).length,
-      segmentationDict: (assets.segmentationDict?.compound_words || []).length,
+      segmentationDict: Object.keys(assets.segmentationDict?.compound_words || {}).length,
       nativePatterns: {
         formalToCasual: Object.keys(assets.nativePatterns?.formal_to_casual || {}).length,
         wordReplacements: Object.keys(assets.nativePatterns?.word_replacements || {}).length
