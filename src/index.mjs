@@ -1,9 +1,10 @@
 /**
- * Vietnamese Language Support - Core Module (ESM)
+ * Vietnamese Language Support - Core Module (ESM) - OPTIMIZED
  * 
  * Provides Vietnamese spelling/grammar correction, language mixing detection,
  * native fluency suggestions, idiom lookup, regional variants, and domain specialization.
  * 
+ * P4.1: Optimized with Trie-based dictionary lookups for <5ms p95 latency
  * P2.1: N-gram Fluency Scoring (3-gram model)
  * P2.2: Context-aware Native Alternatives (relationship, domain, formality)
  * P3.1: IT/Dev Domain Corpus
@@ -16,7 +17,7 @@ import { scoreFluency, rankAlternatives } from './fluency.mjs';
 import { findRelevantIdioms } from './idiom.mjs';
 import { detectRegion } from './region.mjs';
 import { rewriteSentenceStructure as rewriteSentence } from './rewriter.mjs';
-import { getAssets } from './assets.mjs';
+import { getAssets, reloadAssets } from './assets.mjs';
 import { getITDomainConfig, IT_VOCAB } from './domains/it.mjs';
 import { getLaoDomainConfig, LAO_VOCAB } from './domains/lao.mjs';
 import { getGameDomainConfig, GAME_VOCAB } from './domains/game.mjs';
@@ -30,138 +31,52 @@ const NATIVE_PATTERNS_PATH = join(ASSETS_DIR, 'native-patterns.json');
 
 const DOMAIN_VOCABULARY = {
   tech: {
-    'cài': 'cài đặt',
-    'xóa': 'xoá',
-    'sửa': 'chỉnh sửa',
-    'chạy': 'thực thi',
-    'build': 'build',
-    'deploy': 'triển khai',
-    'debug': 'gỡ lỗi',
-    'fix': 'sửa lỗi',
-    'test': 'kiểm thử',
-    'run': 'chạy',
-    'start': 'khởi động',
-    'stop': 'dừng',
-    'restart': 'khởi động lại',
-    'update': 'cập nhật',
-    'upgrade': 'nâng cấp',
-    'install': 'cài đặt',
-    'uninstall': 'gỡ cài đặt',
-    'config': 'cấu hình',
-    'setting': 'cài đặt',
-    'env': 'biến môi trường',
-    'variable': 'biến',
-    'function': 'hàm',
-    'method': 'phương thức',
-    'class': 'lớp',
-    'object': 'đối tượng',
-    'api': 'API',
-    'endpoint': 'điểm cuối',
-    'request': 'yêu cầu',
-    'response': 'phản hồi',
-    'server': 'máy chủ',
-    'client': 'máy khách',
-    'database': 'cơ sở dữ liệu',
-    'cache': 'bộ nhớ đệm',
-    'token': 'token',
-    'auth': 'xác thực',
-    'login': 'đăng nhập',
-    'logout': 'đăng xuất',
-    'register': 'đăng ký',
-    'session': 'phiên',
-    'cookie': 'cookie',
-    'header': 'tiêu đề',
-    'body': 'phần thân',
-    'query': 'truy vấn',
-    'param': 'tham số',
-    'error': 'lỗi',
-    'exception': 'ngoại lệ',
-    'bug': 'lỗi',
-    'issue': 'vấn đề',
-    'feature': 'tính năng',
-    'commit': 'commit',
-    'push': 'đẩy',
-    'pull': 'kéo',
-    'merge': 'ghép',
-    'branch': 'nhánh',
-    'pr': 'pull request',
-    'review': 'xem xét',
-    'approve': 'phê duyệt',
-    'deploy': 'triển khai',
-    'release': 'phát hành',
-    'version': 'phiên bản',
-    'changelog': 'nhật ký thay đổi',
+    'cài': 'cài đặt', 'xóa': 'xoá', 'sửa': 'chỉnh sửa', 'chạy': 'thực thi',
+    'build': 'build', 'deploy': 'triển khai', 'debug': 'gỡ lỗi', 'fix': 'sửa lỗi',
+    'test': 'kiểm thử', 'run': 'chạy', 'start': 'khởi động', 'stop': 'dừng',
+    'restart': 'khởi động lại', 'update': 'cập nhật', 'upgrade': 'nâng cấp',
+    'install': 'cài đặt', 'uninstall': 'gỡ cài đặt', 'config': 'cấu hình',
+    'setting': 'cài đặt', 'env': 'biến môi trường', 'variable': 'biến',
+    'function': 'hàm', 'method': 'phương thức', 'class': 'lớp', 'object': 'đối tượng',
+    'api': 'API', 'endpoint': 'điểm cuối', 'request': 'yêu cầu', 'response': 'phản hồi',
+    'server': 'máy chủ', 'client': 'máy khách', 'database': 'cơ sở dữ liệu',
+    'cache': 'bộ nhớ đệm', 'token': 'token', 'auth': 'xác thực', 'login': 'đăng nhập',
+    'logout': 'đăng xuất', 'register': 'đăng ký', 'session': 'phiên', 'cookie': 'cookie',
+    'header': 'tiêu đề', 'body': 'phần thân', 'query': 'truy vấn', 'param': 'tham số',
+    'error': 'lỗi', 'exception': 'ngoại lệ', 'bug': 'lỗi', 'issue': 'vấn đề',
+    'feature': 'tính năng', 'commit': 'commit', 'push': 'đẩy', 'pull': 'kéo',
+    'merge': 'ghép', 'branch': 'nhánh', 'pr': 'pull request', 'review': 'xem xét',
+    'approve': 'phê duyệt', 'deploy': 'triển khai', 'release': 'phát hành',
+    'version': 'phiên bản', 'changelog': 'nhật ký thay đổi',
   },
   business: {
-    'mua': 'đặt hàng',
-    'bán': 'phân phối',
-    'khách': 'khách hàng',
-    'hàng hóa': 'sản phẩm',
-    'giá': 'giá cả',
-    'giảm giá': 'khuyến mãi',
-    'sale': 'khuyến mãi',
-    'discount': 'giảm giá',
-    'order': 'đơn hàng',
-    'invoice': 'hóa đơn',
-    'payment': 'thanh toán',
-    'receipt': 'biên lai',
-    'refund': 'hoàn tiền',
-    'return': 'trả hàng',
-    'exchange': 'đổi hàng',
-    'warranty': 'bảo hành',
-    'support': 'hỗ trợ',
-    'contact': 'liên hệ',
-    'contract': 'hợp đồng',
-    'deal': 'thỏa thuận',
-    'partner': 'đối tác',
-    'vendor': 'nhà cung cấp',
-    'supplier': 'nhà cung cấp',
-    'revenue': 'doanh thu',
-    'profit': 'lợi nhuận',
-    'cost': 'chi phí',
-    'budget': 'ngân sách',
-    'forecast': 'dự báo',
-    'target': 'mục tiêu',
-    'kpi': 'KPI',
-    'metric': 'chỉ số',
-    'report': 'báo cáo',
-    'meeting': 'cuộc họp',
-    'deadline': 'hạn chót',
-    'schedule': 'lịch trình',
-    'timeline': 'dòng thời gian',
-    'milestone': 'cột mốc',
-    'deliverable': 'kết quả giao',
+    'mua': 'đặt hàng', 'bán': 'phân phối', 'khách': 'khách hàng', 'hàng hóa': 'sản phẩm',
+    'giá': 'giá cả', 'giảm giá': 'khuyến mãi', 'sale': 'khuyến mãi', 'discount': 'giảm giá',
+    'order': 'đơn hàng', 'invoice': 'hóa đơn', 'payment': 'thanh toán', 'receipt': 'biên lai',
+    'refund': 'hoàn tiền', 'return': 'trả hàng', 'exchange': 'đổi hàng', 'warranty': 'bảo hành',
+    'support': 'hỗ trợ', 'contact': 'liên hệ', 'contract': 'hợp đồng', 'deal': 'thỏa thuận',
+    'partner': 'đối tác', 'vendor': 'nhà cung cấp', 'supplier': 'nhà cung cấp',
+    'revenue': 'doanh thu', 'profit': 'lợi nhuận', 'cost': 'chi phí', 'budget': 'ngân sách',
+    'forecast': 'dự báo', 'target': 'mục tiêu', 'kpi': 'KPI', 'metric': 'chỉ số',
+    'report': 'báo cáo', 'meeting': 'cuộc họp', 'deadline': 'hạn chót', 'schedule': 'lịch trình',
+    'timeline': 'dòng thời gian', 'milestone': 'cột mốc', 'deliverable': 'kết quả giao',
   },
   lao: {
-    // Vietnamese-Lao phrasebook mappings (from Ba's notes)
-    'xin chào': 'ສະບາຍດີ (sabaidi)',
-    'cảm ơn': 'ຂອບໃຈ (khob chai)',
-    'xin lỗi': 'ຂໍໂທດ (kho thot)',
-    'tạm biệt': 'ລາກ່າ (la ka)',
+    'xin chào': 'ສະບາຍດີ (sabaidi)', 'cảm ơn': 'ຂອບໃຈ (khob chai)',
+    'xin lỗi': 'ຂໍໂທດ (kho thot)', 'tạm biệt': 'ລາກ່າ (la ka)',
     'bạn khỏe không': 'ເຈົ້າສະບາຍດີບໍ (chao sabaidi bo)',
     'tôi hiểu': 'ຂ້ອຍເຂົ້າໃຈ (khoy khao jai)',
     'tôi không hiểu': 'ຂ້ອຍບໍ່ເຂົ້າໃຈ (khoy bo khao jai)',
-    'bao nhiêu tiền': 'ທີ່ໃດ (thi dai)',
-    'đắt quá': 'ແພງເກີນ (phaeng khuen)',
+    'bao nhiêu tiền': 'ທີ່ໃດ (thi dai)', 'đắt quá': 'ແພງເກີນ (phaeng khuen)',
     'rẻ hơn được không': 'ຂໍໃຫໝົດໄດ້ບໍ (kho ham lot dai bo)',
-    'nước': 'ນ້ຳ (nam)',
-    'cơm': 'ເຂົ້າໜຽມ (khao niam)',
-    'đi': 'ໄປ (pai)',
-    'đến': 'ມາ (ma)',
-    'xe': 'ລົດ (lot)',
-    'xe buýt': 'ລົດເມ (lot me)',
-    'sân bay': 'ສະຫນາມບິນ (sanam bin)',
-    'khách sạn': 'ໂຮງແຮມ (hong haem)',
-    'phòng': 'ຫ້ອງ (hong)',
-    'ngủ': 'ນອນ (non)',
-    'ăn': 'ກິນ (kin)',
-    'uống': 'ດື່ມ (duem)',
-    'đẹp': 'ງາມ (ngam)',
-    'xấu': 'ບໍ່ງາມ (bo ngam)',
-    'to': 'ໃຫຍ່ (nyai)',
-    'nhỏ': 'ເນື້ອຍ (nuea)',
-    'nóng': 'ຮ້ອນ (hon)',
-    'lạnh': 'ເຢັນ (yen)',
+    'nước': 'ນ້ຳ (nam)', 'cơm': 'ເຂົ້າໜຽມ (khao niam)',
+    'đi': 'ໄປ (pai)', 'đến': 'ມາ (ma)', 'xe': 'ລົດ (lot)',
+    'xe buýt': 'ລົດເມ (lot me)', 'sân bay': 'ສະຫນາມບິນ (sanam bin)',
+    'khách sạn': 'ໂຮງແຮມ (hong haem)', 'phòng': 'ຫ້ອງ (hong)',
+    'ngủ': 'ນອນ (non)', 'ăn': 'ກິນ (kin)', 'uống': 'ດື່ມ (duem)',
+    'đẹp': 'ງາມ (ngam)', 'xấu': 'ບໍ່ງາມ (bo ngam)',
+    'to': 'ໃຫຍ່ (nyai)', 'nhỏ': 'ເນື້ອຍ (nuea)',
+    'nóng': 'ຮ້ອນ (hon)', 'lạnh': 'ເຢັນ (yen)',
   }
 };
 
@@ -169,47 +84,145 @@ const DOMAIN_VOCABULARY = {
 
 export { getITDomainConfig, IT_VOCAB };
 export { getLaoDomainConfig, LAO_VOCAB };
+export { getGameDomainConfig, GAME_VOCAB };
+export { getFinanceDomainConfig, FINANCE_VOCAB };
 
 // ============ Pronoun Mapping by Relationship (P2.2) ============
 
 const PRONOUN_MAP = {
-  peer: {
-    'tôi': 'mình',
-    'bạn': 'bạn',
-    'anh': 'anh',
-    'chị': 'chị',
-    'em': 'em',
-    'tao': 'mình',
-    'tui': 'mình',
-  },
-  older: {
-    'tôi': 'em',
-    'bạn': 'anh/chị',
-    'anh': 'anh',
-    'chị': 'chị',
-    'em': 'em',
-    'tao': 'em',
-    'tui': 'em',
-  },
-  younger: {
-    'tôi': 'anh/chị',
-    'bạn': 'em',
-    'anh': 'anh',
-    'chị': 'chị',
-    'em': 'em',
-    'tao': 'anh/chị',
-    'tui': 'anh/chị',
-  },
-  formal: {
-    'tôi': 'tôi',
-    'bạn': 'bạn',
-    'anh': 'anh',
-    'chị': 'chị',
-    'em': 'em',
-    'tao': 'tôi',
-    'tui': 'tôi',
-  },
+  peer: { 'tôi': 'mình', 'bạn': 'bạn', 'anh': 'anh', 'chị': 'chị', 'em': 'em', 'tao': 'mình', 'tui': 'mình' },
+  older: { 'tôi': 'em', 'bạn': 'anh/chị', 'anh': 'anh', 'chị': 'chị', 'em': 'em', 'tao': 'em', 'tui': 'em' },
+  younger: { 'tôi': 'anh/chị', 'bạn': 'em', 'anh': 'anh', 'chị': 'chị', 'em': 'em', 'tao': 'anh/chị', 'tui': 'anh/chị' },
+  formal: { 'tôi': 'tôi', 'bạn': 'bạn', 'anh': 'anh', 'chị': 'chị', 'em': 'em', 'tao': 'tôi', 'tui': 'tôi' },
 };
+
+// ============ Trie Data Structure for Fast Dictionary Lookups ============
+
+class TrieNode {
+  constructor() {
+    this.children = new Map();
+    this.isEnd = false;
+    this.value = null;
+    this.type = null; // 'spelling', 'tone', 'segmentation', 'native', 'domain'
+  }
+}
+
+class Trie {
+  constructor() {
+    this.root = new TrieNode();
+    this.maxKeyLength = 0;
+  }
+
+  insert(key, value, type) {
+    let node = this.root;
+    for (const char of key.toLowerCase()) {
+      if (!node.children.has(char)) {
+        node.children.set(char, new TrieNode());
+      }
+      node = node.children.get(char);
+    }
+    node.isEnd = true;
+    node.value = value;
+    node.type = type;
+    this.maxKeyLength = Math.max(this.maxKeyLength, key.length);
+  }
+
+  /**
+   * Find all matches in text starting from position
+   * Returns array of {key, value, type, length}
+   */
+  findAll(text, start) {
+    const results = [];
+    let node = this.root;
+    let currentKey = '';
+    
+    for (let i = start; i < text.length && i - start < this.maxKeyLength; i++) {
+      const char = text[i].toLowerCase();
+      if (!node.children.has(char)) break;
+      
+      node = node.children.get(char);
+      currentKey += text[i];
+      
+      if (node.isEnd) {
+        // Check word boundary
+        if (isWordBoundary(text, start, currentKey.length)) {
+          results.push({ key: currentKey, value: node.value, type: node.type, length: currentKey.length });
+        }
+      }
+    }
+    return results;
+  }
+}
+
+// Build tries on first use
+let triesCache = null;
+
+function buildTries() {
+  if (triesCache) return triesCache;
+  
+  const assets = getAssets();
+  const tries = {
+    spellingTone: new Trie(),
+    segmentation: new Trie(),
+    nativeFormalToCasual: new Trie(),
+    nativeWordReplacements: new Trie(),
+    domainIT: new Trie(),
+    domainGame: new Trie(),
+    domainFinance: new Trie(),
+    domainLao: new Trie(),
+    domainTech: new Trie(),
+    domainBusiness: new Trie(),
+  };
+
+  // Spelling dictionary
+  for (const [from, to] of Object.entries(assets.spellingDict?.spelling || {})) {
+    if (from.length >= 2) tries.spellingTone.insert(from, to, 'spelling');
+  }
+  // Tone dictionary
+  for (const [from, to] of Object.entries(assets.toneDict || {})) {
+    if (from.length >= 2) tries.spellingTone.insert(from, to, 'tone');
+  }
+  // Segmentation compounds
+  for (const compound of Object.keys(assets.segmentationDict?.compound_words || {})) {
+    if (compound.length > 2) tries.segmentation.insert(compound, compound, 'segmentation');
+  }
+  // Native patterns - formal to casual
+  for (const [formal, casuals] of Object.entries(assets.nativePatterns?.formal_to_casual || {})) {
+    const casual = Array.isArray(casuals) ? casuals[0] : casuals;
+    tries.nativeFormalToCasual.insert(formal, casual, 'formal_to_casual');
+  }
+  // Native patterns - word replacements
+  for (const [word, replacements] of Object.entries(assets.nativePatterns?.word_replacements || {})) {
+    const rep = Array.isArray(replacements) ? replacements[0] : replacements;
+    tries.nativeWordReplacements.insert(word, rep, 'word_replacement');
+  }
+  // Domain vocabularies
+  for (const [from, to] of Object.entries(IT_VOCAB.wordReplacements || {})) {
+    tries.domainIT.insert(from, to, 'domain_it');
+  }
+  for (const [from, to] of Object.entries(GAME_VOCAB.wordReplacements || {})) {
+    tries.domainGame.insert(from, to, 'domain_game');
+  }
+  for (const [from, to] of Object.entries(FINANCE_VOCAB.wordReplacements || {})) {
+    tries.domainFinance.insert(from, to, 'domain_finance');
+  }
+  for (const [from, to] of Object.entries(LAO_VOCAB.wordMap || {})) {
+    tries.domainLao.insert(from, to, 'domain_lao');
+  }
+  for (const [from, to] of Object.entries(DOMAIN_VOCABULARY.tech || {})) {
+    tries.domainTech.insert(from, to, 'domain_tech');
+  }
+  for (const [from, to] of Object.entries(DOMAIN_VOCABULARY.business || {})) {
+    tries.domainBusiness.insert(from, to, 'domain_business');
+  }
+
+  triesCache = tries;
+  return tries;
+}
+
+function clearTriesCache() {
+  triesCache = null;
+}
 
 // ============ Helpers ============
 
@@ -223,26 +236,6 @@ function isWordBoundary(text, index, wordLen) {
   return !isVietnameseWordChar(before) && !isVietnameseWordChar(after);
 }
 
-function replaceWholeWord(text, search, replace, whitelist = []) {
-  if (whitelist.length > 0 && whitelist.some(w => w.toLowerCase() === search.toLowerCase())) {
-    return text;
-  }
-  let result = '';
-  let lastIndex = 0;
-  const searchLen = search.length;
-  const searchLower = search.toLowerCase();
-
-  for (let i = 0; i <= text.length - searchLen; i++) {
-    if (text.slice(i, i + searchLen).toLowerCase() === searchLower && isWordBoundary(text, i, searchLen)) {
-      result += text.slice(lastIndex, i) + replace;
-      lastIndex = i + searchLen;
-      i += searchLen - 1;
-    }
-  }
-  result += text.slice(lastIndex);
-  return result;
-}
-
 function normalizeNFC(text) {
   return text.normalize('NFC');
 }
@@ -254,118 +247,160 @@ function escapeRegExp(string) {
 // ============ Domain Integration Helpers ============
 
 function getDomainProtectedTerms(domain) {
-  if (domain === 'it') {
-    return IT_VOCAB.protectedTerms;
-  }
-  if (domain === 'lao') {
-    return Object.keys(LAO_VOCAB.phrases).concat(Object.keys(LAO_VOCAB.wordMap));
-  }
-  if (domain === 'game') {
-    return GAME_VOCAB.protectedTerms;
-  }
-  if (domain === 'finance') {
-    return FINANCE_VOCAB.protectedTerms;
-  }
+  if (domain === 'it') return IT_VOCAB.protectedTerms;
+  if (domain === 'lao') return Object.keys(LAO_VOCAB.phrases).concat(Object.keys(LAO_VOCAB.wordMap));
+  if (domain === 'game') return GAME_VOCAB.protectedTerms;
+  if (domain === 'finance') return FINANCE_VOCAB.protectedTerms;
   return [];
 }
 
 function getDomainWordReplacements(domain) {
-  if (domain === 'it') {
-    return IT_VOCAB.wordReplacements;
-  }
-  if (domain === 'lao') {
-    return LAO_VOCAB.wordMap;
-  }
-  if (domain === 'game') {
-    return GAME_VOCAB.wordReplacements;
-  }
-  if (domain === 'finance') {
-    return FINANCE_VOCAB.wordReplacements;
-  }
+  if (domain === 'it') return IT_VOCAB.wordReplacements;
+  if (domain === 'lao') return LAO_VOCAB.wordMap;
+  if (domain === 'game') return GAME_VOCAB.wordReplacements;
+  if (domain === 'finance') return FINANCE_VOCAB.wordReplacements;
   return DOMAIN_VOCABULARY[domain] || {};
 }
 
 function getDomainFormalToCasual(domain) {
-  if (domain === 'it') {
-    return IT_VOCAB.formalToCasual;
-  }
-  if (domain === 'game') {
-    return GAME_VOCAB.formalToCasual;
-  }
-  if (domain === 'finance') {
-    return FINANCE_VOCAB.formalToCasual;
-  }
+  if (domain === 'it') return IT_VOCAB.formalToCasual;
+  if (domain === 'game') return GAME_VOCAB.formalToCasual;
+  if (domain === 'finance') return FINANCE_VOCAB.formalToCasual;
   return {};
 }
 
-// ============ Core Functions ============
+// ============ Optimized Core Functions using Trie ============
 
-function fixSpellingAndTone(text, options = {}) {
+function fixSpellingAndToneOptimized(text, options = {}) {
   text = normalizeNFC(text);
-  const assets = getAssets();
-  let result = text;
+  const tries = buildTries();
+  const whitelist = new Set((options.whitelist || []).map(w => w.toLowerCase()));
   const corrections = [];
-
-  const allFixes = [];
-  for (const [from, to] of Object.entries(assets.spellingDict?.spelling || {})) {
-    if (from.length >= 2) allFixes.push({ from, to, type: 'spelling' });
-  }
-  for (const [from, to] of Object.entries(assets.toneDict || {})) {
-    if (from.length >= 2) allFixes.push({ from, to, type: 'tone' });
-  }
-  allFixes.sort((a, b) => b.from.length - a.from.length);
-
-  for (const fix of allFixes) {
-    const whitelist = options.whitelist || [];
-    const newResult = replaceWholeWord(result, fix.from, fix.to, whitelist);
-    if (newResult !== result) {
-      let count = 0;
-      for (let i = 0; i <= result.length - fix.from.length; i++) {
-        if (result.slice(i, i + fix.from.length).toLowerCase() === fix.from.toLowerCase() && isWordBoundary(result, i, fix.from.length)) {
-          count++;
-        }
+  
+  // Use array for efficient string building
+  const resultParts = [];
+  let i = 0;
+  
+  while (i < text.length) {
+    const matches = tries.spellingTone.findAll(text, i);
+    
+    if (matches.length > 0) {
+      // Pick longest match (Trie returns in order of length due to traversal)
+      const bestMatch = matches.reduce((a, b) => b.length > a.length ? b : a);
+      
+      if (!whitelist.has(bestMatch.key.toLowerCase())) {
+        resultParts.push(bestMatch.value);
+        corrections.push({ 
+          type: bestMatch.type, 
+          from: bestMatch.key, 
+          to: bestMatch.value, 
+          count: 1 
+        });
+        i += bestMatch.length;
+        continue;
       }
-      result = newResult;
-      corrections.push({ type: fix.type, from: fix.from, to: fix.to, count });
     }
+    
+    resultParts.push(text[i]);
+    i++;
   }
-
-  return { text: result, corrections };
+  
+  return { text: resultParts.join(''), corrections };
 }
 
-function splitCompoundWord(word) {
-  const patterns = [
-    /^(làm)(việc|ăn|ngủ|học|chơi)$/,
-    /^(đi)(làm|học|chơi|nhau)$/,
-    /^(ăn)(cơm|sáng|trưa|tối|ngon)$/,
-    /^(ngủ)(ngon|sớm|muộn)$/,
-    /^(học)(tập|bài|tốt)$/,
-    /^(chơi)(game|nhạc|thể thao)$/,
-    /^(xem)(phim|tiếp|tv)$/,
-    /^(nghe)(nhạc|chuyện|radio)$/,
-    /^(đọc)(sách|báo|tin)$/,
-    /^(viết)(code|bài|thư)$/,
-    /^(kiểm)(tra|soát)$/,
-    /^(xử)(lý|lí)$/,
-    /^(cài)(đặt|cài)$/,
-    /^(cập)(nhật)$/,
-    /^(tải)(xuống|về)$/,
-    /^(đăng)(nhập|xuất|ký)$/,
-    /^(thanh)(toán)$/,
-    /^(chuyển)(khoản|tiền)$/,
-    /^(nhận)(diện|biết)$/,
-    /^(tự)(động|do)$/,
-    /^(khách)(hàng)$/,
-    /^(nhân)(viên)$/,
-    /^(sản)(phẩm)$/,
-    /^(dịch)(vụ)$/,
-    /^(hỗ)(trợ)$/,
-    /^(tư)(vấn)$/,
-    /^(vận)(chuyển)$/,
-    /^(bảo)(hành)$/,
-    /^(đổi)(trả)$/
-  ];
+function fixSegmentationOptimized(text) {
+  text = normalizeNFC(text);
+  const tries = buildTries();
+  const assets = getAssets();
+  const corrections = [];
+  
+  // Check compounds using Trie
+  const resultParts = [];
+  let i = 0;
+  
+  while (i < text.length) {
+    const matches = tries.segmentation.findAll(text, i);
+    
+    if (matches.length > 0) {
+      const bestMatch = matches.reduce((a, b) => b.length > a.length ? b : a);
+      const compound = bestMatch.key;
+      const parts = splitCompoundWord(compound, assets);
+      
+      if (parts.length > 1) {
+        const spaced = parts.join(' ');
+        resultParts.push(spaced);
+        corrections.push({ type: 'segmentation', from: compound, to: spaced });
+        i += compound.length;
+        continue;
+      }
+    }
+    
+    resultParts.push(text[i]);
+    i++;
+  }
+  
+  return { text: resultParts.join(''), corrections };
+}
 
+function splitCompoundWord(word, assets) {
+  // Look up in segmentation dictionary to get the properly formatted value
+  const dict = assets?.segmentationDict?.compound_words || {};
+  const value = dict[word];
+  
+  if (value && value.includes(' ')) {
+    return value.split(' ');
+  }
+  
+  // Fallback: try common Vietnamese compound patterns (without diacritics)
+  const patterns = [
+    /^(lam)(viec|an|ngu|hoc|choi)$/,
+    /^(di)(lam|hoc|choi|nhau)$/,
+    /^(an)(com|sang|trua|toi|ngon)$/,
+    /^(ngu)(ngon|som|muon)$/,
+    /^(hoc)(tap|bai|tot)$/,
+    /^(choi)(game|nhac|the thao)$/,
+    /^(xem)(phim|tiep|tv)$/,
+    /^(nghe)(nhac|chuyen|radio)$/,
+    /^(doc)(sach|bao|code)$/,
+    /^(viet)(code|bai|email)$/,
+    /^(kiem)(tra|soat|duyet)$/,
+    /^(xu)(ly|tri)$/,
+    /^(cai)(dat|tinh)$/,
+    /^(cap)(nhat|nhat)$/,
+    /^(tai)(xuong|len)$/,
+    /^(dang)(nhap|xuat|ky)$/,
+    /^(thanh)(toan)$/,
+    /^(chuyen)(khoan)$/,
+    /^(nhan)(dien|vien)$/,
+    /^(tu)(dong|van)$/,
+    /^(khach)(hang)$/,
+    /^(san)(pham)$/,
+    /^(dich)(vu)$/,
+    /^(ho)(tro)$/,
+    /^(tu)(van)$/,
+    /^(van)(chuyen)$/,
+    /^(bao)(hanh)$/,
+    /^(doi)(tra)$/,
+    /^(lam)(bai)$/,
+    /^(hoc)(bai)$/,
+    /^(on)(tap)$/,
+    /^(thi)(thu|thuc)$/,
+    /^(xem)(diem)$/,
+    /^(in)(bangdiem)$/,
+    /^(lay)(bangdiem)$/,
+    /^(gui)(don)$/,
+    /^(nhan)(don)$/,
+    /^(phe)(duyet)$/,
+    /^(tu)(choi)$/,
+    /^(hoan)(tra)$/,
+    /^(dich)(vu)$/,
+    /^(ho)(tro)$/,
+    /^(tu)(van)$/,
+    /^(van)(chuyen)$/,
+    /^(bao)(hanh)$/,
+    /^(doi)(tra)$/
+  ];
+  
   for (const pattern of patterns) {
     const match = word.match(pattern);
     if (match) return [match[1], match[2]];
@@ -373,49 +408,20 @@ function splitCompoundWord(word) {
   return [word];
 }
 
-function fixSegmentation(text) {
-  text = normalizeNFC(text);
+// ============ Language Mixing Detection (Optimized with Pre-compiled Patterns) ============
+
+let mixingPatternsCache = null;
+
+function getMixingPatterns() {
+  if (mixingPatternsCache) return mixingPatternsCache;
+  
   const assets = getAssets();
-  let result = text;
-  const corrections = [];
-
-  const compounds = Object.keys(assets.segmentationDict?.compound_words || {});
-  for (const word of compounds) {
-    if (word.length > 2) {
-      const parts = splitCompoundWord(word);
-      if (parts.length > 1) {
-        const spaced = parts.join(' ');
-        const newResult = replaceWholeWord(result, word, spaced);
-        if (newResult !== result) {
-          result = newResult;
-          corrections.push({ type: 'segmentation', from: word, to: spaced });
-        }
-      }
-    }
-  }
-
-  return { text: result, corrections };
-}
-
-// ============ Language Mixing Detection ============
-
-function detectMixing(text, options = {}) {
-  text = normalizeNFC(text);
-  const assets = getAssets();
-  const issues = [];
-
   const chineseChars = assets.mixingPatterns?.chinese_patterns?.single_chars || [];
   const chineseWords = assets.mixingPatterns?.chinese_patterns?.common_words || [];
   const mixedPatterns = assets.mixingPatterns?.chinese_patterns?.mixed_patterns || [];
-  const englishWords = assets.mixingPatterns?.english_patterns?.meaningless_insertions || [];
-  const techTerms = new Set((assets.mixingPatterns?.english_patterns?.tech_terms || []).map(t => t.toLowerCase()));
+  const englishWords = new Set((assets.mixingPatterns?.english_patterns?.meaningless_insertions || []).map(w => w.toLowerCase()));
+  const techTerms = new Set((assets.mixingPatterns?.english_patterns?.tech_terms || []).map(w => w.toLowerCase()));
   
-  // Add domain-specific protected terms to techTerms
-  const domainProtected = options.domain ? getDomainProtectedTerms(options.domain) : [];
-  for (const term of domainProtected) {
-    techTerms.add(term.toLowerCase());
-  }
-
   const techPhrases = new Set([
     'go to', 'api to', 'login to', 'connect to', 'send to', 'write to', 'read from',
     'import from', 'export to', 'deploy to', 'push to', 'pull from', 'commit to',
@@ -426,35 +432,68 @@ function detectMixing(text, options = {}) {
     'join on', 'where', 'group by', 'order by', 'limit', 'offset'
   ]);
 
-  const isChineseChar = (char) => {
-    const code = char.charCodeAt(0);
-    return code >= 0x4E00 && code <= 0x9FFF;
+  mixingPatternsCache = {
+    chineseChars,
+    chineseWords,
+    mixedPatterns,
+    englishWords,
+    techTerms,
+    techPhrases,
+    isChineseChar: (char) => char.charCodeAt(0) >= 0x4E00 && char.charCodeAt(0) <= 0x9FFF
   };
+  
+  return mixingPatternsCache;
+}
 
+function clearMixingPatternsCache() {
+  mixingPatternsCache = null;
+}
+
+function detectMixingOptimized(text, options = {}) {
+  text = normalizeNFC(text);
+  const patterns = getMixingPatterns();
+  const issues = [];
+  const domainProtected = new Set((options.domain ? getDomainProtectedTerms(options.domain) : []).map(t => t.toLowerCase()));
+  
+  // Add domain protected terms to tech terms
+  for (const term of domainProtected) {
+    patterns.techTerms.add(term);
+  }
+
+  // Single pass through text
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
-    const isChinese = isChineseChar(char);
+    const isChinese = patterns.isChineseChar(char);
+    
     if (isChinese) {
       issues.push({ type: 'chinese_sequence', token: char, start: i, length: 1 });
     }
+    
     if (i + 1 < text.length) {
       const char2 = text[i + 1];
       const twoChar = char + char2;
-      if (chineseWords.includes(twoChar) || (isChinese && isChineseChar(char2))) {
+      const isChinese2 = patterns.isChineseChar(char2);
+      
+      if (patterns.chineseWords.includes(twoChar) || (isChinese && isChinese2)) {
         issues.push({ type: 'chinese_sequence', token: twoChar, start: i, length: 2 });
       }
     }
+    
     if (i + 2 < text.length) {
       const char2 = text[i + 1];
       const char3 = text[i + 2];
       const threeChar = char + char2 + char3;
-      if (chineseWords.includes(threeChar) || (isChinese && isChineseChar(char2) && isChineseChar(char3))) {
+      const isChinese2 = patterns.isChineseChar(char2);
+      const isChinese3 = patterns.isChineseChar(char3);
+      
+      if (patterns.chineseWords.includes(threeChar) || (isChinese && isChinese2 && isChinese3)) {
         issues.push({ type: 'chinese_sequence', token: threeChar, start: i, length: 3 });
       }
     }
   }
 
-  for (const pattern of mixedPatterns) {
+  // Mixed patterns
+  for (const pattern of patterns.mixedPatterns) {
     let idx = text.indexOf(pattern);
     while (idx !== -1) {
       issues.push({ type: 'mixed_pattern', token: pattern, position: idx });
@@ -462,12 +501,13 @@ function detectMixing(text, options = {}) {
     }
   }
 
+  // English insertions - check words
   const words = text.split(/(\s+)/);
   let pos = 0;
   for (const word of words) {
     if (word.trim()) {
       const clean = word.toLowerCase().replace(/[.,!?;:()\[\]{}""']/g, '');
-      if (englishWords.includes(clean) && !techTerms.has(clean)) {
+      if (patterns.englishWords.has(clean) && !patterns.techTerms.has(clean)) {
         const wordIndex = words.indexOf(word);
         let prevWord1 = '', prevWord2 = '', nextWord1 = '', nextWord2 = '';
         let count = 0;
@@ -484,7 +524,10 @@ function detectMixing(text, options = {}) {
             if (count === 0) nextWord1 = w; else if (count === 1) nextWord2 = w; count++;
           }
         }
-        const isTechContext = (techPhrases.has(`${prevWord1} ${clean}`) || techPhrases.has(`${prevWord2} ${clean}`) || techPhrases.has(`${clean} ${nextWord1}`) || techPhrases.has(`${clean} ${nextWord2}`)) || techTerms.has(clean);
+        const isTechContext = (patterns.techPhrases.has(`${prevWord1} ${clean}`) || 
+          patterns.techPhrases.has(`${prevWord2} ${clean}`) || 
+          patterns.techPhrases.has(`${clean} ${nextWord1}`) || 
+          patterns.techPhrases.has(`${clean} ${nextWord2}`)) || patterns.techTerms.has(clean);
         if (!isTechContext) {
           issues.push({ type: 'english_insertion', token: word, position: pos });
         }
@@ -498,16 +541,15 @@ function detectMixing(text, options = {}) {
   return issues;
 }
 
-function stripMixing(text, options = {}) {
+function stripMixingOptimized(text, options = {}) {
   let result = normalizeNFC(text);
-  const issues = detectMixing(result, options);
+  const issues = detectMixingOptimized(result, options);
   const intervals = [];
-  const whitelist = options.whitelist || [];
+  const whitelist = new Set((options.whitelist || []).map(w => w.toLowerCase()));
   
   for (const issue of issues) {
-    if (whitelist.length > 0 && whitelist.some(w => w.toLowerCase() === issue.token.toLowerCase())) {
-      continue;
-    }
+    if (whitelist.has(issue.token.toLowerCase())) continue;
+    
     if (issue.type === 'chinese_sequence') {
       intervals.push({ start: issue.start, end: issue.start + issue.length - 1 });
     } else if (issue.type === 'mixed_pattern') {
@@ -524,7 +566,9 @@ function stripMixing(text, options = {}) {
       }
     }
   }
+  
   if (intervals.length === 0) return { text: result, issues };
+  
   intervals.sort((a, b) => a.start - b.start);
   const merged = [];
   let current = intervals[0];
@@ -538,8 +582,9 @@ function stripMixing(text, options = {}) {
     }
   }
   merged.push(current);
+  
   let lastIndex = result.length;
-  let parts = [];
+  const parts = [];
   for (let i = merged.length - 1; i >= 0; i--) {
     const interval = merged[i];
     if (interval.end + 1 < lastIndex) {
@@ -547,9 +592,8 @@ function stripMixing(text, options = {}) {
     }
     lastIndex = interval.start;
   }
-  if (lastIndex > 0) {
-    parts.push(result.substring(0, lastIndex));
-  }
+  if (lastIndex > 0) parts.push(result.substring(0, lastIndex));
+  
   parts.reverse();
   result = parts.join('').replace(/\s+/g, ' ').trim();
   return { text: result, issues };
@@ -561,7 +605,7 @@ function applyPronounMapping(text, relationship) {
   const mapping = PRONOUN_MAP[relationship] || PRONOUN_MAP.peer;
   let result = text;
   for (const [from, to] of Object.entries(mapping)) {
-    result = replaceWholeWord(result, from, to);
+    result = replaceWholeWordOptimized(result, from, to);
   }
   return result;
 }
@@ -572,7 +616,7 @@ function applyDomainVocabulary(text, domain) {
   
   let result = text;
   for (const [from, to] of Object.entries(vocab)) {
-    result = replaceWholeWord(result, from, to);
+    result = replaceWholeWordOptimized(result, from, to);
   }
   return result;
 }
@@ -596,19 +640,16 @@ function getFormalLevelAdjustment(text, formality, domain) {
   let result = text;
   
   if (formality === 'casual') {
-    // Apply general formal->casual mappings
     for (const [formal, casuals] of Object.entries(formalToCasual)) {
       if (result.includes(formal)) {
         result = result.replace(formal, casuals[0]);
       }
     }
-    // Apply domain-specific formal->casual mappings
     result = applyDomainFormalToCasual(result, domain);
   }
   
   if (formality === 'formal') {
-    // Reverse: casual -> formal (if we have mappings)
-    // For now, keep as-is
+    // Could add casual->formal mappings if needed
     return text;
   }
   
@@ -625,12 +666,7 @@ function getFormalLevelAdjustment(text, formality, domain) {
  * @returns {Array} Ranked alternatives with fluency scores
  */
 export function getNativeAlternatives(text, context = {}) {
-  const {
-    relationship = 'peer',
-    domain = 'general',
-    formality = 'auto'
-  } = context;
-
+  const { relationship = 'peer', domain = 'general', formality = 'auto' } = context;
   text = normalizeNFC(text);
   const assets = getAssets();
   const alternatives = [];
@@ -648,7 +684,7 @@ export function getNativeAlternatives(text, context = {}) {
     }
   }
 
-  // 2. Word replacements (slang/tech synonyms)
+  // 2. Word replacements
   const wordReplacements = assets.nativePatterns?.word_replacements || {};
   for (const [word, replacements] of Object.entries(wordReplacements)) {
     const altArray = Array.isArray(replacements) ? replacements : [replacements];
@@ -690,8 +726,6 @@ export function getNativeAlternatives(text, context = {}) {
 
   // 4. Context-aware transformations
   const contextAlternatives = [];
-
-  // Pronoun mapping based on relationship
   const pronounMapped = applyPronounMapping(text, relationship);
   if (pronounMapped !== text) {
     contextAlternatives.push({
@@ -702,7 +736,6 @@ export function getNativeAlternatives(text, context = {}) {
     });
   }
 
-  // Domain-specific vocabulary
   const domainMapped = applyDomainVocabulary(text, domain);
   if (domainMapped !== text) {
     contextAlternatives.push({
@@ -713,7 +746,6 @@ export function getNativeAlternatives(text, context = {}) {
     });
   }
 
-  // Formality adjustment
   const formalityMapped = getFormalLevelAdjustment(text, formality, domain);
   if (formalityMapped !== text) {
     contextAlternatives.push({
@@ -724,10 +756,7 @@ export function getNativeAlternatives(text, context = {}) {
     });
   }
 
-  // Combine all alternatives
   const allAlternatives = [...alternatives, ...contextAlternatives];
-
-  // 5. Rank by fluency (P2.1)
   const candidateTexts = allAlternatives.map(alt => {
     let suggestedText = alt.alternative || alt.alternatives?.[0] || alt.context || text;
     if (alt.type === 'formal_to_casual' || alt.type === 'word_replacement') {
@@ -736,22 +765,36 @@ export function getNativeAlternatives(text, context = {}) {
     return suggestedText;
   });
 
-  // Rank using fluency model
   const ranked = rankAlternatives(candidateTexts, text);
-
-  // Attach fluency scores to alternatives
   const scoredAlternatives = allAlternatives.map((alt, idx) => {
     const rankInfo = ranked[idx] || { candidate: candidateTexts[idx], score: 0 };
-    return {
-      ...alt,
-      fluency: rankInfo.score,
-      suggestedText: rankInfo.candidate
-    };
+    return { ...alt, fluency: rankInfo.score, suggestedText: rankInfo.candidate };
   });
 
-  // Sort by fluency descending
   return scoredAlternatives.sort((a, b) => (b.fluency || 0) - (a.fluency || 0));
 }
+
+// Optimized whole word replacement
+function replaceWholeWordOptimized(text, search, replace, whitelist = new Set()) {
+  if (whitelist.has(search.toLowerCase())) return text;
+  
+  const searchLen = search.length;
+  const searchLower = search.toLowerCase();
+  let result = '';
+  let lastIndex = 0;
+
+  for (let i = 0; i <= text.length - searchLen; i++) {
+    if (text.slice(i, i + searchLen).toLowerCase() === searchLower && isWordBoundary(text, i, searchLen)) {
+      result += text.slice(lastIndex, i) + replace;
+      lastIndex = i + searchLen;
+      i += searchLen - 1;
+    }
+  }
+  result += text.slice(lastIndex);
+  return result;
+}
+
+// ============ Public API ============
 
 export function fixText(text, options = {}) {
   const {
@@ -769,18 +812,17 @@ export function fixText(text, options = {}) {
   let allMixingIssues = [];
   
   if (fixSpelling || fixTone) {
-    const { text: fixed, corrections } = fixSpellingAndTone(result, { whitelist });
+    const { text: fixed, corrections } = fixSpellingAndToneOptimized(result, { whitelist });
     result = fixed;
     allCorrections.push(...corrections);
   }
   
   if (enableSegmentation) {
-    const { text: fixed, corrections } = fixSegmentation(result);
+    const { text: fixed, corrections } = fixSegmentationOptimized(result);
     result = fixed;
     allCorrections.push(...corrections);
   }
   
-  // Apply domain-specific vocabulary replacements
   if (domain !== 'general') {
     const domainMapped = applyDomainVocabulary(result, domain);
     if (domainMapped !== result) {
@@ -790,7 +832,7 @@ export function fixText(text, options = {}) {
   }
   
   if (doStripMixing) {
-    const { text: fixed, issues } = stripMixing(result, { whitelist, domain });
+    const { text: fixed, issues } = stripMixingOptimized(result, { whitelist, domain });
     result = fixed;
     allMixingIssues.push(...issues);
   }
@@ -802,13 +844,13 @@ export function fixText(text, options = {}) {
 
 export function checkText(text, options = {}) {
   text = normalizeNFC(text);
-  const { text: fixed, corrections } = fixSpellingAndTone(text);
-  const { text: segmented, corrections: segCorrections } = fixSegmentation(fixed);
-  const issues = detectMixing(segmented, options);
+  const { text: fixed, corrections } = fixSpellingAndToneOptimized(text);
+  const { text: segmented, corrections: segCorrections } = fixSegmentationOptimized(fixed);
+  const issues = detectMixingOptimized(segmented, options);
   return { original: text, corrections: [...corrections, ...segCorrections], mixingIssues: issues };
 }
 
-export { fixSpellingAndTone, fixSegmentation, detectMixing, stripMixing };
+export { fixSpellingAndToneOptimized as fixSpellingAndTone, fixSegmentationOptimized as fixSegmentation, detectMixingOptimized as detectMixing, stripMixingOptimized as stripMixing };
 
 export function searchIdioms(keyword) {
   const assets = getAssets();
@@ -852,7 +894,31 @@ export function loadConfig(userConfig = {}) {
       'Kotlin', 'Swift', 'C#', 'PHP', 'Ruby', 'HTML', 'CSS', 'JSON', 'YAML', 'TOML', 'SQL',
       'GraphQL', 'REST', 'gRPC', 'WebSocket', 'TCP', 'UDP', 'HTTP', 'HTTPS', 'SSL', 'TLS',
       'JWT', 'OAuth', 'OIDC', 'SAML', 'LDAP', 'RBAC', 'ABAC', 'CI', 'CD', 'DNS', 'VPC', 'IAM',
-      'S3', 'EC2', 'Lambda', 'RDS', 'CloudFormation', 'CloudWatch', 'Config', 'SSM', 'KMS'
+      'S3', 'EC2', 'Lambda', 'RDS', 'CloudFormation', 'CloudWatch', 'Config', 'SSM', 'KMS',
+      'SecretsManager', 'EventBridge', 'SQS', 'SNS', 'API Gateway', 'Load Balancer', 'Auto Scaling',
+      'CloudFront', 'Route53', 'Certificate Manager', 'WAF', 'Shield', 'GuardDuty', 'Inspector',
+      'Macie', 'Security Hub', 'Artifact', 'Audit Manager', 'Control Tower', 'Organizations',
+      'Service Catalog', 'Systems Manager', 'Trusted Advisor', 'Well-Architected', 'Compute Optimizer',
+      'Cost Explorer', 'Budgets', 'Billing', 'Support', 'Marketplace', 'QuickSight', 'Athena',
+      'Redshift', 'EMR', 'Glue', 'Data Pipeline', 'Kinesis', 'MSK', 'DynamoDB', 'ElastiCache',
+      'Neptune', 'DocumentDB', 'Keyspaces', 'Timestream', 'QLDB', 'Lake Formation', 'Data Exchange',
+      'Analytics', 'Machine Learning', 'SageMaker', 'Rekognition', 'Comprehend', 'Translate', 'Polly',
+      'Lex', 'Connect', 'Chime', 'WorkSpaces', 'AppStream', 'WorkDocs', 'WorkMail', 'WorkLink',
+      'WorkSpaces Web', 'IoT', 'Greengrass', 'FreeRTOS', 'IoT Core', 'IoT Analytics', 'IoT Events',
+      'IoT SiteWise', 'IoT Things Graph', 'IoT Device Defender', 'IoT Device Management', 'Alexa',
+      'Lex', 'Polly', 'Rekognition', 'Textract', 'Transcribe', 'Translate', 'Comprehend', 'Forecast',
+      'Personalize', 'Fraud Detector', 'Kendra', 'CodeGuru', 'DevOps Guru', 'Proton', 'App Runner',
+      'App Mesh', 'Cloud Map', 'Service Catalog', 'Systems Manager', 'OpsWorks', 'Elastic Beanstalk',
+      'CloudFormation', 'CDK', 'SAM', 'Amplify', 'Device Farm', 'CodeBuild', 'CodeDeploy',
+      'CodePipeline', 'CodeStar', 'CodeCommit', 'CodeArtifact', 'X-Ray', 'CloudWatch', 'CloudTrail',
+      'Config', 'Systems Manager', 'Managed Services', 'Support', 'Trusted Advisor', 'Personal Health Dashboard',
+      'Service Health Dashboard', 'Health', 'Well-Architected Tool', 'Compute Optimizer', 'Cost Explorer',
+      'Budgets', 'Pricing Calculator', 'Billing', 'Marketplace', 'QuickSight', 'Athena', 'EMR', 'Redshift',
+      'Glue', 'Data Pipeline', 'Kinesis', 'MSK', 'DynamoDB', 'ElastiCache', 'Neptune', 'DocumentDB',
+      'Keyspaces', 'Timestream', 'QLDB', 'Lake Formation', 'Data Exchange', 'SageMaker', 'Rekognition',
+      'Comprehend', 'Translate', 'Polly', 'Lex', 'Connect', 'Chime', 'WorkSpaces', 'AppStream',
+      'WorkDocs', 'WorkMail', 'WorkLink', 'IoT', 'Greengrass', 'FreeRTOS', 'IoT Core', 'IoT Analytics',
+      'IoT Events', 'IoT SiteWise', 'IoT Things Graph', 'IoT Device Defender', 'IoT Device Management'
     ],
     enableMixingDetection: true,
     formalLevel: 'auto',
@@ -864,6 +930,9 @@ export function loadConfig(userConfig = {}) {
 
 // Export fluency functions
 export { scoreFluency, rankAlternatives };
+
+// Export hot-reload function
+export { reloadAssets };
 
 export async function healthCheck() {
   const assets = getAssets();
@@ -905,6 +974,10 @@ export { detectRegion };
 
 // P2.5: Sentence Rewriter
 export { rewriteSentence };
+export { rewriteSentence as rewriteSentenceStructure };
+
+// Initialize tries on module load
+buildTries();
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   import('./cli.mjs');

@@ -2,31 +2,12 @@
   "name": "vietnamese-language-support",
   "version": "1.0.0",
   "description": "Vietnamese spelling/grammar correction, language mixing detection, native fluency for weak-Vietnamese models",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
-    },
-    "./hooks/post_model_output": {
-      "import": "./hooks/post_model_output.mjs",
-      "require": "./hooks/post_model_output.js"
-    },
-    "./health": {
-      "import": "./dist/health.mjs",
-      "require": "./dist/health.js"
-    }
-  },
-  "scripts": {
-    "build": "node build.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "benchmark": "node src/benchmark.mjs",
-    "health": "node src/health.mjs",
-    "prepublishOnly": "npm run build && npm test"
+  "author": "Min",
+  "license": "MIT",
+  "homepage": "https://github.com/openclaw/vietnamese-language-support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openclaw/vietnamese-language-support.git"
   },
   "keywords": [
     "vietnamese",
@@ -39,56 +20,71 @@
     "openclaw",
     "skill"
   ],
-  "author": "Min",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/openclaw/vietnamese-language-support.git"
-  },
-  "files": [
-    "dist",
-    "hooks",
-    "health.js",
-    "skill.json",
-    "assets"
-  ],
   "engines": {
     "node": ">=20.0.0"
   },
   "openclaw": {
     "skillVersion": "1.0",
     "minOpenClawVersion": "0.10.0",
-    "entryPoint": "dist/index.js",
+    "entryPoint": "dist/index.mjs",
+    "main": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs",
+        "types": "./dist/index.d.ts"
+      },
+      "./hooks/post_model_output": {
+        "import": "./hooks/post_model_output.mjs",
+        "require": "./hooks/post_model_output.js"
+      },
+      "./health": {
+        "import": "./dist/health.mjs",
+        "require": "./dist/health.js"
+      },
+      "./tools/vn_fix": "./tools/vn_fix.schema.json",
+      "./tools/vn_check": "./tools/vn_check.schema.json",
+      "./tools/vn_native": "./tools/vn_native.schema.json",
+      "./tools/vn_idiom": "./tools/vn_idiom.schema.json",
+      "./tools/vn_region": "./tools/vn_region.schema.json"
+    },
     "tools": [
       {
         "name": "vn_fix",
         "description": "Fix Vietnamese spelling, tone marks, segmentation, strip language mixing",
-        "schema": "tools/vn_fix.schema.json"
+        "schema": "tools/vn_fix.schema.json",
+        "handler": "fixText"
       },
       {
         "name": "vn_check",
         "description": "Check Vietnamese text for issues without auto-fixing",
-        "schema": "tools/vn_check.schema.json"
+        "schema": "tools/vn_check.schema.json",
+        "handler": "checkText"
       },
       {
         "name": "vn_native",
         "description": "Get native-sounding alternatives for a phrase",
-        "schema": "tools/vn_native.schema.json"
+        "schema": "tools/vn_native.schema.json",
+        "handler": "getNativeAlternatives"
       },
       {
         "name": "vn_idiom",
         "description": "Search Vietnamese idioms/proverbs by keyword",
-        "schema": "tools/vn_idiom.schema.json"
+        "schema": "tools/vn_idiom.schema.json",
+        "handler": "searchIdioms"
       },
       {
         "name": "vn_region",
         "description": "Get regional variant (north/central/south) for a word",
-        "schema": "tools/vn_region.schema.json"
+        "schema": "tools/vn_region.schema.json",
+        "handler": "getRegionalVariant"
       }
     ],
     "hooks": {
-      "post_model_output": "hooks/post_model_output.js"
+      "post_model_output": "hooks/post_model_output.mjs"
     },
+    "healthCheck": "dist/health.mjs",
     "configSchema": {
       "type": "object",
       "properties": {
@@ -137,12 +133,51 @@
       "assets/idioms.json",
       "assets/regional-variants.json",
       "assets/fluency-model.json"
-    ]
+    ],
+    "capabilities": [
+      "spelling-correction",
+      "tone-mark-correction",
+      "word-segmentation",
+      "language-mixing-detection",
+      "native-fluency-alternatives",
+      "idiom-injection",
+      "regional-variants",
+      "sentence-rewriting",
+      "domain-specialization"
+    ],
+    "domains": ["general", "it", "game", "finance", "lao"],
+    "benchmark": {
+      "targetP95Ms": 5,
+      "targetMemoryDeltaMB": 50,
+      "testSentences": 1000
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "benchmark": "node src/benchmark.mjs",
+    "lint": "eslint src --ext .mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
-    "vitest": "^1.0.0",
-    "eslint": "^8.0.0",
-    "@types/node": "^20.12.0",
-    "typescript": "^5.4.0"
+    "vitest": "^1.6.0",
+    "eslint": "^8.57.0",
+    "chokidar": "^3.6.0"
+  },
+  "files": [
+    "dist",
+    "tools",
+    "hooks",
+    "health.js",
+    "skill.json",
+    "plugin.json",
+    "assets",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "bin": {
+    "vn-lang": "dist/cli.mjs"
   }
 }

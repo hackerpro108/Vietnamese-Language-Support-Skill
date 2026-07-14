@@ -67,9 +67,9 @@ async function build() {
   copyFileSync(join(ROOT, 'skill.json'), join(DIST, 'skill.json'));
   console.log('📋 skill.json copied to dist/');
 
-  // Copy health.js
-  copyFileSync(join(ROOT, 'health.js'), join(DIST, 'health.js'));
-  console.log('🏥 health.js copied to dist/');
+  // Copy health.mjs
+  copyFileSync(join(SRC, 'health.mjs'), join(DIST, 'health.mjs'));
+  console.log('🏥 health.mjs copied to dist/');
 
   // Copy package.json
   copyFileSync(join(ROOT, 'package.json'), join(DIST, 'package.json'));
@@ -78,7 +78,7 @@ async function build() {
   console.log('✅ Build complete');
   console.log(`   dist/index.mjs (main entry)`);
   console.log(`   dist/hooks/post_model_output.js`);
-  console.log(`   dist/health.js`);
+  console.log(`   dist/health.mjs`);
   console.log(`   dist/assets/`);
   console.log(`   dist/tools/`);
 }
