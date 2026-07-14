@@ -1,0 +1,11 @@
+{
+  "name": "vn_idiom",
+  "description": "Search Vietnamese idioms/proverbs by keyword",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "keyword": { "type": "string", "description": "Keyword to search idioms/proverbs" }
+    },
+    "required": ["keyword"]
+  }
+}

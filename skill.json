@@ -1,0 +1,128 @@
+{
+  "name": "vietnamese-language-support",
+  "version": "1.0.0",
+  "description": "Vietnamese spelling/grammar correction, language mixing detection, native fluency for weak-Vietnamese models",
+  "author": "Min",
+  "license": "MIT",
+  "homepage": "https://github.com/openclaw/vietnamese-language-support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openclaw/vietnamese-language-support.git"
+  },
+  "keywords": ["vietnamese", "nlp", "language-model", "post-processing", "grammar", "spelling", "language-mixing"],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./hooks/post_model_output": {
+      "import": "./hooks/post_model_output.mjs",
+      "require": "./hooks/post_model_output.js"
+    },
+    "./health": {
+      "import": "./dist/health.mjs",
+      "require": "./dist/health.js"
+    }
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "openclaw": {
+    "skillVersion": "1.0",
+    "minOpenClawVersion": "0.10.0",
+    "entryPoint": "dist/index.js",
+    "tools": [
+      {
+        "name": "vn_fix",
+        "description": "Fix Vietnamese spelling, tone marks, segmentation, strip language mixing",
+        "schema": "tools/vn_fix.schema.json"
+      },
+      {
+        "name": "vn_check",
+        "description": "Check Vietnamese text for issues without auto-fixing",
+        "schema": "tools/vn_check.schema.json"
+      },
+      {
+        "name": "vn_native",
+        "description": "Get native-sounding alternatives for a phrase",
+        "schema": "tools/vn_native.schema.json"
+      },
+      {
+        "name": "vn_idiom",
+        "description": "Search Vietnamese idioms/proverbs by keyword",
+        "schema": "tools/vn_idiom.schema.json"
+      },
+      {
+        "name": "vn_region",
+        "description": "Get regional variant (north/central/south) for a word",
+        "schema": "tools/vn_region.schema.json"
+      }
+    ],
+    "hooks": {
+      "post_model_output": "hooks/post_model_output.js"
+    },
+    "configSchema": {
+      "type": "object",
+      "properties": {
+        "dictPath": {
+          "type": "string",
+          "description": "Custom dictionary assets path",
+          "default": "assets"
+        },
+        "whitelist": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Terms never to modify (brand names, proper nouns, tech terms)",
+          "default": ["API", "React", "TypeScript", "NextJS", "VionSky", "OpenClaw", "Nemotron", "Gemma", "Ollama", "Prisma", "PostgreSQL", "Redis", "Docker", "Kubernetes", "AWS", "GCP", "Azure", "GitHub", "GitLab", "npm", "Yarn", "PNPM", "Bun", "Deno", "NodeJS", "JavaScript", "Python", "Go", "Rust", "Java", "Kotlin", "Swift", "C#", "PHP", "Ruby", "HTML", "CSS", "JSON", "YAML", "TOML", "SQL", "GraphQL", "REST", "gRPC", "WebSocket", "TCP", "UDP", "HTTP", "HTTPS", "SSL", "TLS", "JWT", "OAuth", "OIDC", "SAML", "LDAP", "RBAC", "ABAC", "CI", "CD", "CI/CD", "DNS", "VPC", "IAM", "S3", "EC2", "Lambda", "RDS", "CloudFormation", "CloudWatch", "Config", "SSM", "KMS", "SecretsManager", "EventBridge", "SQS", "SNS", "API Gateway", "Load Balancer", "Auto Scaling", "CloudFront", "Route53", "Certificate Manager", "WAF", "Shield", "GuardDuty", "Inspector", "Macie", "Security Hub", "Artifact", "Audit Manager", "Control Tower", "Organizations", "Service Catalog", "Systems Manager", "Trusted Advisor", "Well-Architected", "Compute Optimizer", "Cost Explorer", "Budgets", "Billing", "Support", "Marketplace", "QuickSight", "Athena", "Redshift", "EMR", "Glue", "Data Pipeline", "Kinesis", "MSK", "DynamoDB", "ElastiCache", "Neptune", "DocumentDB", "Keyspaces", "Timestream", "QLDB", "Lake Formation", "Data Exchange", "Analytics", "Machine Learning", "SageMaker", "Rekognition", "Comprehend", "Translate", "Polly", "Lex", "Connect", "Chime", "WorkSpaces", "AppStream", "WorkDocs", "WorkMail", "WorkLink", "WorkSpaces Web", "IoT", "Greengrass", "FreeRTOS", "IoT Core", "IoT Analytics", "IoT Events", "IoT SiteWise", "IoT Things Graph", "IoT Device Defender", "IoT Device Management", "Alexa", "Lex", "Polly", "Rekognition", "Textract", "Transcribe", "Translate", "Comprehend", "Forecast", "Personalize", "Fraud Detector", "Kendra", "CodeGuru", "DevOps Guru", "Proton", "App Runner", "App Mesh", "Cloud Map", "Service Catalog", "Systems Manager", "OpsWorks", "Elastic Beanstalk", "CloudFormation", "CDK", "SAM", "Amplify", "Device Farm", "CodeBuild", "CodeDeploy", "CodePipeline", "CodeStar", "CodeCommit", "CodeArtifact", "X-Ray", "CloudWatch", "CloudTrail", "Config", "Systems Manager", "Managed Services", "Support", "Trusted Advisor", "Personal Health Dashboard", "Service Health Dashboard", "Health", "Well-Architected Tool", "Compute Optimizer", "Cost Explorer", "Budgets", "Pricing Calculator", "Billing", "Marketplace", "QuickSight", "Athena", "EMR", "Redshift", "Glue", "Data Pipeline", "Kinesis", "MSK", "DynamoDB", "ElastiCache", "Neptune", "DocumentDB", "Keyspaces", "Timestream", "QLDB", "Lake Formation", "Data Exchange", "SageMaker", "Rekognition", "Comprehend", "Translate", "Polly", "Lex", "Connect", "Chime", "WorkSpaces", "AppStream", "WorkDocs", "WorkMail", "WorkLink", "IoT", "Greengrass", "FreeRTOS", "IoT Core", "IoT Analytics", "IoT Events", "IoT SiteWise", "IoT Things Graph", "IoT Device Defender", "IoT Device Management"]
+        },
+        "enableMixingDetection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Chinese/English language mixing detection"
+        },
+        "formalLevel": {
+          "type": "string",
+          "enum": ["auto", "formal", "casual"],
+          "default": "auto",
+          "description": "Output formality level"
+        },
+        "stripMixing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Strip detected language mixing from output"
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "assets": [
+      "assets/spelling-dict.json",
+      "assets/tone-dict.json",
+      "assets/segmentation-dict.json",
+      "assets/native-patterns.json",
+      "assets/mixing-patterns.json",
+      "assets/idioms.json",
+      "assets/regional-variants.json"
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "eslint": "^8.0.0"
+  }
+}

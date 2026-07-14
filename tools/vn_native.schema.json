@@ -1,0 +1,11 @@
+{
+  "name": "vn_native",
+  "description": "Get native-sounding alternatives for a phrase",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "phrase": { "type": "string", "description": "Phrase to get native alternatives for" }
+    },
+    "required": ["phrase"]
+  }
+}

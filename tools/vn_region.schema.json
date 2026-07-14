@@ -1,0 +1,12 @@
+{
+  "name": "vn_region",
+  "description": "Get regional variant (north/central/south) for a word",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "word": { "type": "string", "description": "Word to get regional variant for" },
+      "region": { "type": "string", "enum": ["north", "central", "south"], "default": "north", "description": "Target region" }
+    },
+    "required": ["word"]
+  }
+}

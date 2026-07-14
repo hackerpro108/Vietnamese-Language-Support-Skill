@@ -1,0 +1,24 @@
+{
+  "name": "vn_fix",
+  "description": "Fix Vietnamese spelling, tone marks, segmentation, strip language mixing",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "description": "Vietnamese text to fix"
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "fixSpelling": { "type": "boolean", "default": true },
+          "fixTone": { "type": "boolean", "default": true },
+          "fixSegmentation": { "type": "boolean", "default": true },
+          "stripMixing": { "type": "boolean", "default": true },
+          "formalLevel": { "type": "string", "enum": ["auto", "formal", "casual"], "default": "auto" }
+        }
+      }
+    },
+    "required": ["text"]
+  }
+}

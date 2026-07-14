@@ -1,0 +1,90 @@
+{
+  "chinese_patterns": {
+    "single_chars": [
+      "的", "了", "是", "在", "有", "我", "你", "他", "她", "它", "们", "这", "那", "个", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十",
+      "上", "下", "左", "右", "前", "后", "里", "外", "中", "大", "小", "多", "少", "好", "坏", "新", "旧", "高", "低", "长", "短", "快", "慢",
+      "来", "去", "回", "进", "出", "上", "下", "起", "坐", "站", "走", "跑", "跳", "飞", "游", "吃", "喝", "睡", "醒", "看", "听", "说", "读",
+      "写", "想", "知", "道", "明", "白", "懂", "不", "没", "没", "别", "别", "请", "谢", "对", "错", "是", "非", "真", "假", "实", "虚", "虚", "实"
+    ],
+    "common_words": [
+      "因为", "所以", "但是", "不过", "而且", "或者", "如果", "那么", "这样", "那样", "这个", "那个", "这里", "那里", "现在", "以后", "以前", "时候",
+      "问题", "答案", "方法", "办法", "理由", "原因", "结果", "过程", "情况", "条件", "要求", "标准", "水平", "能力", "机会", "可能", "不可能",
+      "必须", "应该", "可以", "能够", "愿意", "想要", "需要", "希望", "期待", "担心", "害怕", "开心", "难过", "生气", "惊讶", "奇怪", "正常",
+      "特别", "普通", "一般", "特殊", "独特", "相同", "不同", "一样", "不一样", "相似", "差别", "区别", "联系", "关系", "影响", "作用", "意义",
+      "价值", "重要", "次要", "主要", "次要", "核心", "关键", "基础", "基础", "根本", "本质", "现象", "表面", "深层", "内在", "外在", "整体", "局部"
+    ],
+    "mixed_patterns": [
+      "API的", "model的", "server的", "client的", "data的", "code的", "function的", "class的", "object的", "method的", "property的", "variable的",
+      "config的", "setting的", "parameter的", "argument的", "return的", "value的", "type的", "interface的", "implementation的", "instance的",
+      "database的", "table的", "column的", "row的", "index的", "query的", "transaction的", "connection的", "session的", "cache的", "memory的",
+      "cpu的", "gpu的", "disk的", "network的", "bandwidth的", "latency的", "throughput的", "performance的", "optimization的", "bottleneck的",
+      "bug的", "error的", "exception的", "crash的", "hang的", "leak的", "deadlock的", "race condition的", "concurrency的", "parallelism的",
+      "thread的", "process的", "coroutine的", "async的", "await的", "promise的", "future的", "callback的", "event的", "handler的", "listener的",
+      "middleware的", "plugin的", "extension的", "module的", "package的", "library的", "framework的", "tool的", "utility的", "helper的", "wrapper的"
+    ]
+  },
+  "english_patterns": {
+    "meaningless_insertions": [
+      "the", "and", "to", "of", "a", "in", "is", "it", "you", "that", "he", "was", "for", "on", "are", "as", "with", "his", "they", "at", "be",
+      "this", "have", "from", "or", "one", "had", "by", "word", "but", "not", "what", "all", "were", "we", "when", "your", "can", "said", "there",
+      "use", "an", "each", "which", "she", "do", "how", "their", "if", "will", "up", "other", "about", "out", "many", "then", "them", "these", "so",
+      "some", "her", "would", "make", "like", "him", "into", "time", "has", "look", "two", "more", "write", "go", "see", "number", "no", "way", "could",
+      "people", "my", "than", "first", "water", "been", "call", "who", "oil", "its", "now", "find", "long", "down", "day", "did", "get", "come", "made",
+      "may", "part", "over", "new", "sound", "take", "only", "little", "work", "know", "place", "year", "live", "me", "back", "give", "most", "very",
+      "after", "thing", "our", "just", "name", "good", "sentence", "man", "think", "say", "great", "where", "help", "through", "much", "before", "line",
+      "right", "too", "mean", "old", "any", "same", "tell", "boy", "follow", "came", "want", "show", "also", "around", "form", "three", "small", "set",
+      "put", "end", "does", "another", "well", "large", "must", "big", "even", "such", "because", "turn", "here", "why", "ask", "went", "men", "read",
+      "need", "land", "different", "home", "us", "move", "try", "kind", "hand", "picture", "again", "change", "off", "play", "spell", "air", "away",
+      "animal", "house", "point", "page", "letter", "mother", "answer", "found", "study", "still", "learn", "should", "America", "world", "high", "every",
+      "near", "add", "food", "between", "own", "below", "country", "plant", "last", "school", "father", "keep", "tree", "never", "start", "city", "earth",
+      "eye", "light", "thought", "head", "under", "story", "saw", "left", "don't", "few", "while", "along", "might", "close", "something", "seem", "next",
+      "hard", "open", "example", "begin", "life", "always", "those", "both", "paper", "together", "got", "group", "often", "run", "important", "until",
+      "children", "side", "feet", "car", "mile", "night", "walk", "white", "sea", "began", "grow", "took", "river", "four", "carry", "state", "once",
+      "book", "hear", "stop", "without", "second", "late", "miss", "idea", "enough", "eat", "face", "watch", "far", "Indian", "real", "almost", "let",
+      "above", "girl", "sometimes", "mountain", "cut", "young", "talk", "soon", "list", "song", "being", "leave", "family", "it's"
+    ],
+    "code_switching": [
+      "I think", "I feel", "I guess", "I suppose", "I believe", "I know", "I understand", "I agree", "I disagree", "I like", "I love", "I hate",
+      "I want", "I need", "I have", "I got", "I will", "I would", "I could", "I should", "I must", "I can", "I cannot", "I don't", "I didn't",
+      "it's", "it is", "it was", "it will", "it would", "it could", "it should", "it must", "it can", "it cannot", "that's", "that is", "that was",
+      "this is", "this was", "what's", "what is", "what was", "who's", "who is", "who was", "where's", "where is", "where was", "how's", "how is",
+      "how was", "why's", "why is", "why was", "when's", "when is", "when was", "there's", "there is", "there was", "here's", "here is", "here was",
+      "let's", "let us", "don't", "do not", "doesn't", "does not", "didn't", "did not", "won't", "will not", "wouldn't", "would not", "can't", "cannot",
+      "couldn't", "could not", "shouldn't", "should not", "mustn't", "must not", "needn't", "need not", "haven't", "have not", "hasn't", "has not",
+      "hadn't", "had not", "aren't", "are not", "weren't", "were not", "isn't", "is not", "wasn't", "was not", "ain't", "am not"
+    ],
+    "tech_terms": [
+      "API", "SDK", "IDE", "CLI", "GUI", "UI", "UX", "DB", "SQL", "NoSQL", "JSON", "XML", "YAML", "TOML", "HTML", "CSS", "JS", "TS", "JSX", "TSX",
+      "HTTP", "HTTPS", "REST", "GraphQL", "gRPC", "WebSocket", "TCP", "UDP", "IP", "DNS", "SSL", "TLS", "OAuth", "JWT", "SSO", "SAML", "OIDC",
+      "CI", "CD", "CI/CD", "Docker", "Kubernetes", "K8s", "AWS", "GCP", "Azure", "Cloud", "Serverless", "Lambda", "Function", "Container", "Pod",
+      "Service", "Deployment", "Ingress", "ConfigMap", "Secret", "Volume", "PV", "PVC", "Namespace", "Cluster", "Node", "Master", "Worker", "ETCD",
+      "Git", "GitHub", "GitLab", "Bitbucket", "PR", "MR", "Branch", "Merge", "Rebase", "Commit", "Push", "Pull", "Fetch", "Clone", "Fork", "Issue",
+      "Bug", "Feature", "Hotfix", "Release", "Tag", "Version", "SemVer", "Changelog", "README", "License", "MIT", "Apache", "GPL", "BSD", "ISC",
+      "NPM", "Yarn", "PNPM", "Package", "Dependency", "DevDependency", "PeerDependency", "Lockfile", "Node", "NPM", "NPX", "Bun", "Deno", "Vite",
+      "Webpack", "Rollup", "ESBuild", "SWC", "Babel", "TypeScript", "JavaScript", "ESM", "CJS", "AMD", "UMD", "IIFE", "TreeShaking", "CodeSplitting",
+      "LazyLoading", "SSR", "SSG", "ISR", "CSR", "SPA", "MPA", "PWA", "SEO", "Meta", "OpenGraph", "TwitterCard", "Sitemap", "Robots", "Canonical",
+      "React", "Vue", "Angular", "Svelte", "Solid", "Qwik", "Astro", "Next", "Nuxt", "Remix", "Gatsby", "VitePress", "Docusaurus", "Storybook",
+      "Tailwind", "Bootstrap", "Material", "Ant", "Chakra", "MUI", "Radix", "Headless", "UI", "Component", "Library", "DesignSystem", "Tokens",
+      "Python", "FastAPI", "Django", "Flask", "Starlette", "Pydantic", "SQLAlchemy", "Tortoise", "Prisma", "Drizzle", "TypeORM", "MikroORM", "Sequelize",
+      "Go", "Golang", "Gin", "Echo", "Fiber", "Chi", "Mux", "Standard", "GRPC", "Protobuf", "ProtocolBuffers", "OpenAPI", "Swagger", "Redoc",
+      "Rust", "Cargo", "Crates", "Tokio", "Async", "Await", "Future", "Stream", "Pin", "Unpin", "Send", "Sync", "Clone", "Copy", "Drop", "Borrow",
+      "Ownership", "Lifetime", "Trait", "Impl", "Struct", "Enum", "Match", "Option", "Result", "Vec", "HashMap", "BTreeMap", "String", "Str",
+      "Java", "Spring", "SpringBoot", "Quarkus", "Micronaut", "Vert.x", "Netty", "JVM", "JDK", "JRE", "Maven", "Gradle", "Kotlin", "Coroutines",
+      "Flow", "Channel", "Select", "Deferred", "Job", "Scope", "Context", "Suspend", "Inline", "Crossinline", "Noinline", "Reified", "Typealias",
+      "CSharp", "DotNet", "ASP.NET", "Core", "EntityFramework", "LINQ", "Async", "Await", "Task", "ValueTask", "CancellationToken", "ConfigureAwait",
+      "PHP", "Laravel", "Symfony", "Composer", "PSR", "PSR-4", "PSR-7", "PSR-12", "Attribute", "Enum", "Match", "Union", "Intersection", "Never",
+      "Ruby", "Rails", "Sinatra", "Hanami", "Gem", "Bundler", "RSpec", "Minitest", "FactoryBot", "Faker", "ActiveRecord", "ActiveModel", "ActionView",
+      "Node", "NPM", "Yarn", "PNPM", "Bun", "Deno", "ESM", "CJS", "TypeScript", "JavaScript", "TSConfig", "ESLint", "Prettier", "Husky", "LintStaged"
+    ]
+  },
+  "detection_rules": {
+    "chinese_char_ratio_threshold": 0.15,
+    "english_word_ratio_threshold": 0.2,
+    "mixed_token_threshold": 3,
+    "consecutive_chinese_threshold": 2,
+    "consecutive_english_threshold": 3,
+    "tech_term_whitelist": true,
+    "code_switching_detection": true,
+    "meaningless_insertion_detection": true
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "idioms": [
+    {
+      "phrase": "có công mài sắt, có ngày thành kim",
+      "meaning": "Kiên trì, nỗ lực không ngừng cuối cùng sẽ thành công",
+      "english": "Persistence pays off; constant dripping wears away the stone",
+      "category": "persistence",
+      "usage": "Khuyến khích ai đó đang nỗ lực học tập, làm việc"
+    },
+    {
+      "phrase": "ăn quả nhớ kẻ trồng cây",
+      "meaning": "Biết ơn người đã ban cho mình phúc lợi, thành quả",
+      "english": "Remember the source when drinking water",
+      "category": "gratitude",
+      "usage": "Dạy lòng biết ơn, thường dùng trong gia đình, trường học"
+    },
+    {
+      "phrase": "đi một ngày đàng, học một sàng khôn",
+      "meaning": "Ra đời xã hội, trải nghiệm thực tế sẽ học được nhiều bài học quý báu",
+      "english": "Experience is the best teacher",
+      "category": "experience",
+      "usage": "Khuyên người trẻ ra đời làm việc, trải nghiệm"
+    },
+    {
+      "phrase": "gần mực thì đen, gần đèn thì sáng",
+      "meaning": "Môi trường, bạn bè quyết định nhân cách, phẩm chất của con người",
+      "english": "You are who you associate with",
+      "category": "environment",
+      "usage": "Nhắc nhở chọn bạn chơi, môi trường làm việc tốt"
+    },
+    {
+      "phrase": "nhập gia tùy tục",
+      "meaning": "Đến nơi nào phải tuân theo phong tục, quy tắc của nơi đó",
+      "english": "When in Rome, do as the Romans do",
+      "category": "adaptability",
+      "usage": "Khi đi làm việc, du lịch, sinh sống ở nơi mới"
+    },
+    {
+      "phrase": "có chí thì nên",
+      "meaning": "Người có quyết tâm,意志坚定终将达到目的",
+      "english": "Where there's a will, there's a way",
+      "category": "determination",
+      "usage": "Khuyến khích vượt qua khó khăn, thử thách"
+    },
+    {
+      "phrase": "thấm thoắt một phen, thấm đắng một phen",
+      "meaning": "Trải qua những khó khăn, gian truân mới hiểu được sự nhân sinh",
+      "english": "No pain, no gain",
+      "category": "experience",
+      "usage": "Chia sẻ kinh nghiệm, an ủi người gặp thất bại"
+    },
+    {
+      "phrase": "nước chảy nơi trũng, người tốt việc lành",
+      "meaning": "Người tử tế, làm việc tốt sẽ được đời 報答",
+      "english": "Good deeds bring good rewards",
+      "category": "karma",
+      "usage": "Khuyến khích làm الخير, giúp đỡ người khác"
+    },
+    {
+      "phrase": "mười năm trees, trăm năm people",
+      "meaning": "Đào tạo con người khó khăn, tốn thời gian hơn trồng cây",
+      "english": "It takes ten years to grow a tree, a hundred to educate a person",
+      "category": "education",
+      "usage": "Nhấn mạnh tầm quan trọng của giáo dục, đào tạo"
+    },
+    {
+      "phrase": "học thầy không tày học bạn",
+      "meaning": "Phải học từ người có kinh nghiệm, uy tín, không học theo bạn bè cùng trang lứa",
+      "english": "Learn from masters, not peers",
+      "category": "learning",
+      "usage": "Khuyên chọn người thầy, mentor tốt"
+    },
+    {
+      "phrase": "đi đêm lái ngang, không biết đường ai",
+      "meaning": "Làm việc thiếu kinh nghiệm, không có hướng dẫn dễ sai lầm",
+      "english": "Blind leading the blind",
+      "category": "experience",
+      "usage": "Cảnh giác khi tự làm việc phức tạp không có mentor"
+    },
+    {
+      "phrase": "đau một lần, khôn một lần",
+      "meaning": "Thất bại, đau khổ một lần sẽ rút ra bài học quý giá",
+      "english": "Once bitten, twice shy",
+      "category": "learning",
+      "usage": "An ủi sau thất bại, khuyến khích rút kinh nghiệm"
+    },
+    {
+      "phrase": "tiền mất tật mang",
+      "meaning": "Cả mất tiền lại còn bị đau ốm, tổn thương",
+      "english": "Lose money and health",
+      "category": "loss",
+      "usage": "Cảnh giác rủi ro, lừa đảo, đầu tư sai"
+    },
+    {
+      "phrase": "gió đâu gió đó, mưa đâu mưa đó",
+      "meaning": "Tình huống thay đổi theo hoàn cảnh, không cố định",
+      "english": "Circumstances change",
+      "category": "change",
+      "usage": "Mô tả tình hình biến động, không ổn định"
+    },
+    {
+      "phrase": "cái khó ló cái khôn",
+      "meaning": "Khi gặp khó khăn mới thấy ra sự khôn ngoan, tài năng của người",
+      "english": "Adversity reveals character",
+      "category": "character",
+      "usage": "Đánh giá người qua cách xử lý khó khăn"
+    },
+    {
+      "phrase": "ngựa tốt không ăn cỏ quay đầu",
+      "meaning": "Người có chín thì không quay lại quá khứ, không tiếc nuối quyết định đã làm",
+      "english": "Don't look back",
+      "category": "resolve",
+      "usage": "Khuyến khích quyết tâm, không ngại khó khăn"
+    },
+    {
+      "phrase": "râu ria mép cụ, chưa chắc đã khôn",
+      "meaning": "Người già không nhất thiết đã khôn ngoan, người trẻ cũng có thể khôn",
+      "english": "Age doesn't guarantee wisdom",
+      "category": "wisdom",
+      "usage": "Nhắc nhở không đánh giá qua bề ngoài, tuổi tác"
+    },
+    {
+      "phrase": "chó sủa xe lăn",
+      "meaning": "Người hèn nhát, vô tài chỉ biết nói xấu, chỉ trích người có tài năng",
+      "english": "Dogs bark at passing cars",
+      "category": "criticism",
+      "usage": "Chỉ người hay nói xấu, phán xét người khác"
+    },
+    {
+      "phrase": "một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao",
+      "meaning": "Đoàn kết, hợp tác mới tạo được sức mạnh lớn",
+      "english": "United we stand, divided we fall",
+      "category": "unity",
+      "usage": "Khuyến khích làm việc nhóm, đoàn kết"
+    },
+    {
+      "phrase": "uống nước nhớ nguồn",
+      "meaning": "Biết ơn nguồn gốc, người đã giúp đỡ, nuôi dưỡng mình",
+      "english": "Remember the source when drinking water",
+      "category": "gratitude",
+      "usage": "Dạy lòng biết ơn, thường dùng trong gia đình, trường học"
+    }
+  ],
+  "proverbs": [
+    {
+      "phrase": "chậm mà chắc",
+      "meaning": "Làm chậm nhưng kỹ, chắc chắn tốt hơn làm vội vã, sai sót"
+    },
+    {
+      "phrase": "nhanh như chớp",
+      "meaning": "Rất nhanh"
+    },
+    {
+      "phrase": "bền như thép",
+      "meaning": "Rất kiên cường, không bao giờ bỏ cuộc"
+    },
+    {
+      "phrase": "nhẹ như lông hồng",
+      "meaning": "Rất nhẹ, không đáng kể"
+    },
+    {
+      "phrase": "nặng như núi泰山",
+      "meaning": "Rất quan trọng, trách nhiệm lớn"
+    },
+    {
+      "phrase": "sáng như ban ngày",
+      "meaning": "Rất rõ ràng, minh bạch"
+    },
+    {
+      "phrase": "tối như mực",
+      "meaning": "Rất tối, hoặc rất khó hiểu"
+    },
+    {
+      "phrase": "ngọt như mật",
+      "meaning": "Lời nói rất ngọt ngào, dễ nghe (thường mang ý khen hoặc châm biếm)"
+    },
+    {
+      "phrase": "đắng như cầy",
+      "meaning": "Rất đắng, hoặc hoàn cảnh rất khổ đau"
+    },
+    {
+      "phrase": "cay như ớt",
+      "meaning": "Rất cay, hoặc tính cách nóng nảy"
+    }
+  ]
+}

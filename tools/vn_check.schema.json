@@ -1,0 +1,11 @@
+{
+  "name": "vn_check",
+  "description": "Check Vietnamese text for issues without auto-fixing",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "text": { "type": "string", "description": "Vietnamese text to check" }
+    },
+    "required": ["text"]
+  }
+}
